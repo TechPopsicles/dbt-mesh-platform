@@ -1,0 +1,404 @@
+-- =============================================================================
+-- dbt-mesh-platform  ·  Snowflake One-Time Setup
+-- =============================================================================
+-- Run as SYSADMIN before any dbt commands.
+--
+-- Naming convention:
+--   Databases  →  {DOMAIN}_{ENV}          FINANCE_DEV  / FINANCE_PROD
+--   Warehouses →  {DOMAIN}_WH             FINANCE_WH   (shared dev + prod)
+--   Roles      →  {DOMAIN}_{ENV}_ROLE     FINANCE_DEV_ROLE / FINANCE_PROD_ROLE
+--   Schemas    →  {LAYER}                 staging / intermediate / marts / reporting
+--                 (schema name is plain — database already carries domain + env)
+--
+-- Execution order:
+--   1. Run this file in full as SYSADMIN
+--   2. Run first dbt build for each domain project  (creates schemas)
+--   3. Run governance/grants.sql  (schema-level and view-level grants)
+-- =============================================================================
+
+USE ROLE SYSADMIN;
+
+
+-- =============================================================================
+-- SECTION 1 — WAREHOUSES
+-- One warehouse per domain, shared across dev and prod targets.
+-- Auto-suspend at 60s — cost safe for development workloads.
+-- =============================================================================
+
+CREATE WAREHOUSE IF NOT EXISTS PLATFORM_WH
+    WAREHOUSE_SIZE      = 'X-SMALL'
+    AUTO_SUSPEND        = 60
+    AUTO_RESUME         = TRUE
+    INITIALLY_SUSPENDED = TRUE
+    COMMENT             = 'Platform — sources, staging, reference data';
+
+CREATE WAREHOUSE IF NOT EXISTS COMMERCIAL_WH
+    WAREHOUSE_SIZE      = 'X-SMALL'
+    AUTO_SUSPEND        = 60
+    AUTO_RESUME         = TRUE
+    INITIALLY_SUSPENDED = TRUE
+    COMMENT             = 'Commercial — sales, crm, partnerships';
+
+CREATE WAREHOUSE IF NOT EXISTS FINANCE_WH
+    WAREHOUSE_SIZE      = 'SMALL'
+    AUTO_SUSPEND        = 60
+    AUTO_RESUME         = TRUE
+    INITIALLY_SUSPENDED = TRUE
+    COMMENT             = 'Finance — ARR, billing, fp&a. SMALL for month-end close runs.';
+
+CREATE WAREHOUSE IF NOT EXISTS PRODUCT_WH
+    WAREHOUSE_SIZE      = 'SMALL'
+    AUTO_SUSPEND        = 60
+    AUTO_RESUME         = TRUE
+    INITIALLY_SUSPENDED = TRUE
+    COMMENT             = 'Product — events, features, growth, ml. SMALL for event stream volume.';
+
+CREATE WAREHOUSE IF NOT EXISTS MARKETING_WH
+    WAREHOUSE_SIZE      = 'X-SMALL'
+    AUTO_SUSPEND        = 60
+    AUTO_RESUME         = TRUE
+    INITIALLY_SUSPENDED = TRUE
+    COMMENT             = 'Marketing — seo, sem, content, lifecycle';
+
+CREATE WAREHOUSE IF NOT EXISTS ANALYTICS_WH
+    WAREHOUSE_SIZE      = 'SMALL'
+    AUTO_SUSPEND        = 60
+    AUTO_RESUME         = TRUE
+    INITIALLY_SUSPENDED = TRUE
+    COMMENT             = 'Analytics — cross-domain marts, metric registry. SMALL for cross-domain joins.';
+
+
+-- =============================================================================
+-- SECTION 2 — ROLES
+-- Dev role  → engineers locally + CI slim build  (writes to {DOMAIN}_DEV)
+-- Prod role → CI/CD deploy job only              (writes to {DOMAIN}_PROD)
+-- =============================================================================
+
+USE ROLE USERADMIN;
+
+CREATE ROLE IF NOT EXISTS PLATFORM_DEV_ROLE
+    COMMENT = 'Platform dev + CI. Reads Snowflake sample data. Writes PLATFORM_DEV.';
+CREATE ROLE IF NOT EXISTS PLATFORM_PROD_ROLE
+    COMMENT = 'Platform prod deploy only. Writes PLATFORM_PROD.';
+
+CREATE ROLE IF NOT EXISTS COMMERCIAL_DEV_ROLE
+    COMMENT = 'Commercial dev + CI. Reads PLATFORM_DEV staging. Writes COMMERCIAL_DEV.';
+CREATE ROLE IF NOT EXISTS COMMERCIAL_PROD_ROLE
+    COMMENT = 'Commercial prod deploy only. Writes COMMERCIAL_PROD.';
+
+CREATE ROLE IF NOT EXISTS FINANCE_DEV_ROLE
+    COMMENT = 'Finance dev + CI. SOX-sensitive. Reads PLATFORM_DEV staging. Writes FINANCE_DEV.';
+CREATE ROLE IF NOT EXISTS FINANCE_PROD_ROLE
+    COMMENT = 'Finance prod deploy only. SOX-sensitive. Writes FINANCE_PROD.';
+
+CREATE ROLE IF NOT EXISTS PRODUCT_DEV_ROLE
+    COMMENT = 'Product dev + CI. Reads PLATFORM_DEV staging. Writes PRODUCT_DEV.';
+CREATE ROLE IF NOT EXISTS PRODUCT_PROD_ROLE
+    COMMENT = 'Product prod deploy only. Writes PRODUCT_PROD.';
+
+CREATE ROLE IF NOT EXISTS MARKETING_DEV_ROLE
+    COMMENT = 'Marketing dev + CI. Reads PLATFORM_DEV + COMMERCIAL_DEV dim_customers. Writes MARKETING_DEV.';
+CREATE ROLE IF NOT EXISTS MARKETING_PROD_ROLE
+    COMMENT = 'Marketing prod deploy only. Writes MARKETING_PROD.';
+
+CREATE ROLE IF NOT EXISTS ANALYTICS_DEV_ROLE
+    COMMENT = 'Analytics dev + CI. Cross-domain reader. Reads all domain marts. Writes ANALYTICS_DEV.';
+CREATE ROLE IF NOT EXISTS ANALYTICS_PROD_ROLE
+    COMMENT = 'Analytics prod deploy only. Writes ANALYTICS_PROD.';
+
+-- Make all domain roles children of SYSADMIN
+-- Required so SYSADMIN can grant them to users
+GRANT ROLE PLATFORM_DEV_ROLE    TO ROLE SYSADMIN;
+GRANT ROLE PLATFORM_PROD_ROLE   TO ROLE SYSADMIN;
+GRANT ROLE COMMERCIAL_DEV_ROLE  TO ROLE SYSADMIN;
+GRANT ROLE COMMERCIAL_PROD_ROLE TO ROLE SYSADMIN;
+GRANT ROLE FINANCE_DEV_ROLE     TO ROLE SYSADMIN;
+GRANT ROLE FINANCE_PROD_ROLE    TO ROLE SYSADMIN;
+GRANT ROLE PRODUCT_DEV_ROLE     TO ROLE SYSADMIN;
+GRANT ROLE PRODUCT_PROD_ROLE    TO ROLE SYSADMIN;
+GRANT ROLE MARKETING_DEV_ROLE   TO ROLE SYSADMIN;
+GRANT ROLE MARKETING_PROD_ROLE  TO ROLE SYSADMIN;
+GRANT ROLE ANALYTICS_DEV_ROLE   TO ROLE SYSADMIN;
+GRANT ROLE ANALYTICS_PROD_ROLE  TO ROLE SYSADMIN;    
+
+
+-- =============================================================================
+-- SECTION 3 — WAREHOUSE GRANTS
+-- Each role uses its own domain warehouse only.
+-- Credit consumption is fully attributable per domain.
+-- =============================================================================
+USE ROLE SYSADMIN;
+
+GRANT USAGE ON WAREHOUSE PLATFORM_WH   TO ROLE PLATFORM_DEV_ROLE;
+GRANT USAGE ON WAREHOUSE PLATFORM_WH   TO ROLE PLATFORM_PROD_ROLE;
+
+GRANT USAGE ON WAREHOUSE COMMERCIAL_WH TO ROLE COMMERCIAL_DEV_ROLE;
+GRANT USAGE ON WAREHOUSE COMMERCIAL_WH TO ROLE COMMERCIAL_PROD_ROLE;
+
+GRANT USAGE ON WAREHOUSE FINANCE_WH    TO ROLE FINANCE_DEV_ROLE;
+GRANT USAGE ON WAREHOUSE FINANCE_WH    TO ROLE FINANCE_PROD_ROLE;
+
+GRANT USAGE ON WAREHOUSE PRODUCT_WH    TO ROLE PRODUCT_DEV_ROLE;
+GRANT USAGE ON WAREHOUSE PRODUCT_WH    TO ROLE PRODUCT_PROD_ROLE;
+
+GRANT USAGE ON WAREHOUSE MARKETING_WH  TO ROLE MARKETING_DEV_ROLE;
+GRANT USAGE ON WAREHOUSE MARKETING_WH  TO ROLE MARKETING_PROD_ROLE;
+
+GRANT USAGE ON WAREHOUSE ANALYTICS_WH  TO ROLE ANALYTICS_DEV_ROLE;
+GRANT USAGE ON WAREHOUSE ANALYTICS_WH  TO ROLE ANALYTICS_PROD_ROLE;
+
+
+-- =============================================================================
+-- SECTION 4 — DATABASES
+-- One database per domain per environment.
+-- Database  = domain ownership + environment
+-- Schema    = data layer (staging / intermediate / marts / reporting)
+-- No "DBT" prefix — that is an implementation detail, not a business concept.
+-- =============================================================================
+
+CREATE DATABASE IF NOT EXISTS PLATFORM_DEV    COMMENT = 'Platform — dev + CI writes here';
+CREATE DATABASE IF NOT EXISTS PLATFORM_PROD   COMMENT = 'Platform — production';
+
+CREATE DATABASE IF NOT EXISTS COMMERCIAL_DEV  COMMENT = 'Commercial — dev + CI writes here';
+CREATE DATABASE IF NOT EXISTS COMMERCIAL_PROD COMMENT = 'Commercial — production';
+
+CREATE DATABASE IF NOT EXISTS FINANCE_DEV     COMMENT = 'Finance — dev + CI writes here';
+CREATE DATABASE IF NOT EXISTS FINANCE_PROD    COMMENT = 'Finance — production';
+
+CREATE DATABASE IF NOT EXISTS PRODUCT_DEV     COMMENT = 'Product — dev + CI writes here';
+CREATE DATABASE IF NOT EXISTS PRODUCT_PROD    COMMENT = 'Product — production';
+
+CREATE DATABASE IF NOT EXISTS MARKETING_DEV   COMMENT = 'Marketing — dev + CI writes here';
+CREATE DATABASE IF NOT EXISTS MARKETING_PROD  COMMENT = 'Marketing — production';
+
+CREATE DATABASE IF NOT EXISTS ANALYTICS_DEV   COMMENT = 'Analytics — dev + CI writes here';
+CREATE DATABASE IF NOT EXISTS ANALYTICS_PROD  COMMENT = 'Analytics — production';
+
+
+-- =============================================================================
+-- SECTION 5 — OWN DATABASE GRANTS
+-- Full ownership on own database only.
+-- CREATE SCHEMA required so dbt can create layers and CI schemas dynamically.
+-- =============================================================================
+
+GRANT ALL PRIVILEGES ON DATABASE PLATFORM_DEV    TO ROLE PLATFORM_DEV_ROLE;
+GRANT ALL PRIVILEGES ON DATABASE PLATFORM_PROD   TO ROLE PLATFORM_PROD_ROLE;
+GRANT CREATE SCHEMA   ON DATABASE PLATFORM_DEV    TO ROLE PLATFORM_DEV_ROLE;
+GRANT CREATE SCHEMA   ON DATABASE PLATFORM_PROD   TO ROLE PLATFORM_PROD_ROLE;
+
+GRANT ALL PRIVILEGES ON DATABASE COMMERCIAL_DEV   TO ROLE COMMERCIAL_DEV_ROLE;
+GRANT ALL PRIVILEGES ON DATABASE COMMERCIAL_PROD  TO ROLE COMMERCIAL_PROD_ROLE;
+GRANT CREATE SCHEMA   ON DATABASE COMMERCIAL_DEV   TO ROLE COMMERCIAL_DEV_ROLE;
+GRANT CREATE SCHEMA   ON DATABASE COMMERCIAL_PROD  TO ROLE COMMERCIAL_PROD_ROLE;
+
+GRANT ALL PRIVILEGES ON DATABASE FINANCE_DEV      TO ROLE FINANCE_DEV_ROLE;
+GRANT ALL PRIVILEGES ON DATABASE FINANCE_PROD     TO ROLE FINANCE_PROD_ROLE;
+GRANT CREATE SCHEMA   ON DATABASE FINANCE_DEV      TO ROLE FINANCE_DEV_ROLE;
+GRANT CREATE SCHEMA   ON DATABASE FINANCE_PROD     TO ROLE FINANCE_PROD_ROLE;
+
+GRANT ALL PRIVILEGES ON DATABASE PRODUCT_DEV      TO ROLE PRODUCT_DEV_ROLE;
+GRANT ALL PRIVILEGES ON DATABASE PRODUCT_PROD     TO ROLE PRODUCT_PROD_ROLE;
+GRANT CREATE SCHEMA   ON DATABASE PRODUCT_DEV      TO ROLE PRODUCT_DEV_ROLE;
+GRANT CREATE SCHEMA   ON DATABASE PRODUCT_PROD     TO ROLE PRODUCT_PROD_ROLE;
+
+GRANT ALL PRIVILEGES ON DATABASE MARKETING_DEV    TO ROLE MARKETING_DEV_ROLE;
+GRANT ALL PRIVILEGES ON DATABASE MARKETING_PROD   TO ROLE MARKETING_PROD_ROLE;
+GRANT CREATE SCHEMA   ON DATABASE MARKETING_DEV    TO ROLE MARKETING_DEV_ROLE;
+GRANT CREATE SCHEMA   ON DATABASE MARKETING_PROD   TO ROLE MARKETING_PROD_ROLE;
+
+GRANT ALL PRIVILEGES ON DATABASE ANALYTICS_DEV    TO ROLE ANALYTICS_DEV_ROLE;
+GRANT ALL PRIVILEGES ON DATABASE ANALYTICS_PROD   TO ROLE ANALYTICS_PROD_ROLE;
+GRANT CREATE SCHEMA   ON DATABASE ANALYTICS_DEV    TO ROLE ANALYTICS_DEV_ROLE;
+GRANT CREATE SCHEMA   ON DATABASE ANALYTICS_PROD   TO ROLE ANALYTICS_PROD_ROLE;
+
+
+-- =============================================================================
+-- SECTION 6 — SOURCE DATA ACCESS
+-- ONLY Platform roles read Snowflake Sample Data.
+-- All other domain roles read Platform staging views — never raw tables.
+-- This is the single enforced chokepoint of the entire mesh architecture.
+-- =============================================================================
+
+GRANT USAGE  ON DATABASE SNOWFLAKE_SAMPLE_DATA
+    TO ROLE PLATFORM_DEV_ROLE;
+GRANT USAGE  ON DATABASE SNOWFLAKE_SAMPLE_DATA
+    TO ROLE PLATFORM_PROD_ROLE;
+
+-- TPC-H SF1
+GRANT USAGE  ON SCHEMA SNOWFLAKE_SAMPLE_DATA.TPCH_SF1
+    TO ROLE PLATFORM_DEV_ROLE;
+GRANT USAGE  ON SCHEMA SNOWFLAKE_SAMPLE_DATA.TPCH_SF1
+    TO ROLE PLATFORM_PROD_ROLE;
+GRANT SELECT ON ALL TABLES IN SCHEMA SNOWFLAKE_SAMPLE_DATA.TPCH_SF1
+    TO ROLE PLATFORM_DEV_ROLE;
+GRANT SELECT ON ALL TABLES IN SCHEMA SNOWFLAKE_SAMPLE_DATA.TPCH_SF1
+    TO ROLE PLATFORM_PROD_ROLE;
+
+-- TPC-DS SF10
+GRANT USAGE  ON SCHEMA SNOWFLAKE_SAMPLE_DATA.TPCDS_SF10TCL
+    TO ROLE PLATFORM_DEV_ROLE;
+GRANT USAGE  ON SCHEMA SNOWFLAKE_SAMPLE_DATA.TPCDS_SF10TCL
+    TO ROLE PLATFORM_PROD_ROLE;
+GRANT SELECT ON ALL TABLES IN SCHEMA SNOWFLAKE_SAMPLE_DATA.TPCDS_SF10TCL
+    TO ROLE PLATFORM_DEV_ROLE;
+GRANT SELECT ON ALL TABLES IN SCHEMA SNOWFLAKE_SAMPLE_DATA.TPCDS_SF10TCL
+    TO ROLE PLATFORM_PROD_ROLE;
+
+
+-- =============================================================================
+-- SECTION 7 — CROSS-DOMAIN DATABASE USAGE
+-- USAGE on a database opens the door.
+-- Schema + object grants (in grants.sql) open specific rooms.
+-- USAGE alone grants zero data access.
+--
+-- Run this section now.
+-- Run grants.sql AFTER first dbt build (schemas must exist before granting).
+-- =============================================================================
+
+-- All domain roles need USAGE on Platform to read staging views
+GRANT USAGE ON DATABASE PLATFORM_DEV  TO ROLE COMMERCIAL_DEV_ROLE;
+GRANT USAGE ON DATABASE PLATFORM_DEV  TO ROLE FINANCE_DEV_ROLE;
+GRANT USAGE ON DATABASE PLATFORM_DEV  TO ROLE PRODUCT_DEV_ROLE;
+GRANT USAGE ON DATABASE PLATFORM_DEV  TO ROLE MARKETING_DEV_ROLE;
+GRANT USAGE ON DATABASE PLATFORM_DEV  TO ROLE ANALYTICS_DEV_ROLE;
+
+GRANT USAGE ON DATABASE PLATFORM_PROD TO ROLE COMMERCIAL_PROD_ROLE;
+GRANT USAGE ON DATABASE PLATFORM_PROD TO ROLE FINANCE_PROD_ROLE;
+GRANT USAGE ON DATABASE PLATFORM_PROD TO ROLE PRODUCT_PROD_ROLE;
+GRANT USAGE ON DATABASE PLATFORM_PROD TO ROLE MARKETING_PROD_ROLE;
+GRANT USAGE ON DATABASE PLATFORM_PROD TO ROLE ANALYTICS_PROD_ROLE;
+
+-- Marketing reads Commercial (dim_customers only — restricted in grants.sql)
+GRANT USAGE ON DATABASE COMMERCIAL_DEV  TO ROLE MARKETING_DEV_ROLE;
+GRANT USAGE ON DATABASE COMMERCIAL_PROD TO ROLE MARKETING_PROD_ROLE;
+
+-- Finance reads Commercial (fct_deals_closed only — restricted in grants.sql)
+GRANT USAGE ON DATABASE COMMERCIAL_DEV  TO ROLE FINANCE_DEV_ROLE;
+GRANT USAGE ON DATABASE COMMERCIAL_PROD TO ROLE FINANCE_PROD_ROLE;
+
+-- Analytics reads all domain marts (restricted in grants.sql — Finance FP&A excluded)
+GRANT USAGE ON DATABASE COMMERCIAL_DEV  TO ROLE ANALYTICS_DEV_ROLE;
+GRANT USAGE ON DATABASE FINANCE_DEV     TO ROLE ANALYTICS_DEV_ROLE;
+GRANT USAGE ON DATABASE PRODUCT_DEV     TO ROLE ANALYTICS_DEV_ROLE;
+GRANT USAGE ON DATABASE MARKETING_DEV   TO ROLE ANALYTICS_DEV_ROLE;
+
+GRANT USAGE ON DATABASE COMMERCIAL_PROD TO ROLE ANALYTICS_PROD_ROLE;
+GRANT USAGE ON DATABASE FINANCE_PROD    TO ROLE ANALYTICS_PROD_ROLE;
+GRANT USAGE ON DATABASE PRODUCT_PROD    TO ROLE ANALYTICS_PROD_ROLE;
+GRANT USAGE ON DATABASE MARKETING_PROD  TO ROLE ANALYTICS_PROD_ROLE;
+
+
+-- =============================================================================
+-- SECTION 8 — FUTURE SCHEMA GRANTS  (critical for CI)
+-- When dbt creates pr_{number}_staging during a CI run, the consuming role
+-- must read it immediately — no manual grant needed.
+-- GRANT ON FUTURE SCHEMAS + FUTURE VIEWS handles this automatically.
+--
+-- Rule: if Role B reads schemas owned by Role A, grant FUTURE access
+--       in Role A's database to Role B.
+-- =============================================================================
+
+-- ── PLATFORM_DEV → all domain dev roles ──────────────────────────────────────
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE PLATFORM_DEV TO ROLE COMMERCIAL_DEV_ROLE;
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE PLATFORM_DEV TO ROLE FINANCE_DEV_ROLE;
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE PLATFORM_DEV TO ROLE PRODUCT_DEV_ROLE;
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE PLATFORM_DEV TO ROLE MARKETING_DEV_ROLE;
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE PLATFORM_DEV TO ROLE ANALYTICS_DEV_ROLE;
+
+GRANT SELECT ON FUTURE VIEWS   IN DATABASE PLATFORM_DEV TO ROLE COMMERCIAL_DEV_ROLE;
+GRANT SELECT ON FUTURE VIEWS   IN DATABASE PLATFORM_DEV TO ROLE FINANCE_DEV_ROLE;
+GRANT SELECT ON FUTURE VIEWS   IN DATABASE PLATFORM_DEV TO ROLE PRODUCT_DEV_ROLE;
+GRANT SELECT ON FUTURE VIEWS   IN DATABASE PLATFORM_DEV TO ROLE MARKETING_DEV_ROLE;
+GRANT SELECT ON FUTURE VIEWS   IN DATABASE PLATFORM_DEV TO ROLE ANALYTICS_DEV_ROLE;
+
+-- ── PLATFORM_PROD → all domain prod roles ────────────────────────────────────
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE PLATFORM_PROD TO ROLE COMMERCIAL_PROD_ROLE;
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE PLATFORM_PROD TO ROLE FINANCE_PROD_ROLE;
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE PLATFORM_PROD TO ROLE PRODUCT_PROD_ROLE;
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE PLATFORM_PROD TO ROLE MARKETING_PROD_ROLE;
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE PLATFORM_PROD TO ROLE ANALYTICS_PROD_ROLE;
+
+GRANT SELECT ON FUTURE VIEWS   IN DATABASE PLATFORM_PROD TO ROLE COMMERCIAL_PROD_ROLE;
+GRANT SELECT ON FUTURE VIEWS   IN DATABASE PLATFORM_PROD TO ROLE FINANCE_PROD_ROLE;
+GRANT SELECT ON FUTURE VIEWS   IN DATABASE PLATFORM_PROD TO ROLE PRODUCT_PROD_ROLE;
+GRANT SELECT ON FUTURE VIEWS   IN DATABASE PLATFORM_PROD TO ROLE MARKETING_PROD_ROLE;
+GRANT SELECT ON FUTURE VIEWS   IN DATABASE PLATFORM_PROD TO ROLE ANALYTICS_PROD_ROLE;
+
+-- ── COMMERCIAL_DEV → Marketing + Finance + Analytics ─────────────────────────
+-- FUTURE SCHEMAS: so pr_{n}_marts schemas are visible in CI runs
+-- FUTURE VIEWS: scoped further to specific views in grants.sql for prod
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE COMMERCIAL_DEV TO ROLE MARKETING_DEV_ROLE;
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE COMMERCIAL_DEV TO ROLE FINANCE_DEV_ROLE;
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE COMMERCIAL_DEV TO ROLE ANALYTICS_DEV_ROLE;
+
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE COMMERCIAL_PROD TO ROLE MARKETING_PROD_ROLE;
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE COMMERCIAL_PROD TO ROLE FINANCE_PROD_ROLE;
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE COMMERCIAL_PROD TO ROLE ANALYTICS_PROD_ROLE;
+
+-- ── FINANCE_DEV → Analytics (FUTURE SCHEMAS only — view-level in grants.sql) ─
+-- FP&A schema intentionally excluded from FUTURE VIEWS grant
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE FINANCE_DEV  TO ROLE ANALYTICS_DEV_ROLE;
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE FINANCE_PROD TO ROLE ANALYTICS_PROD_ROLE;
+
+-- ── PRODUCT_DEV → Analytics ───────────────────────────────────────────────────
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE PRODUCT_DEV  TO ROLE ANALYTICS_DEV_ROLE;
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE PRODUCT_PROD TO ROLE ANALYTICS_PROD_ROLE;
+
+-- ── MARKETING_DEV → Analytics ─────────────────────────────────────────────────
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE MARKETING_DEV  TO ROLE ANALYTICS_DEV_ROLE;
+GRANT USAGE  ON FUTURE SCHEMAS IN DATABASE MARKETING_PROD TO ROLE ANALYTICS_PROD_ROLE;
+
+
+-- =============================================================================
+-- SECTION 9 — ASSIGN ROLES TO USERS
+-- Uncomment and replace placeholders before running.
+-- For solo development: grant all dev roles to your username.
+-- Prod roles go to CI/CD service accounts only — not humans.
+-- =============================================================================
+-- USE ROLE USERADMIN
+
+-- Solo developer (Kiran — all domains locally)
+-- GRANT ROLE PLATFORM_DEV_ROLE    TO USER <your_snowflake_username>;
+-- GRANT ROLE COMMERCIAL_DEV_ROLE  TO USER <your_snowflake_username>;
+-- GRANT ROLE FINANCE_DEV_ROLE     TO USER <your_snowflake_username>;
+-- GRANT ROLE PRODUCT_DEV_ROLE     TO USER <your_snowflake_username>;
+-- GRANT ROLE MARKETING_DEV_ROLE   TO USER <your_snowflake_username>;
+-- GRANT ROLE ANALYTICS_DEV_ROLE   TO USER <your_snowflake_username>;
+
+-- CI/CD service account (GitHub Actions)
+-- GRANT ROLE PLATFORM_PROD_ROLE   TO USER <ci_service_account>;
+-- GRANT ROLE COMMERCIAL_PROD_ROLE TO USER <ci_service_account>;
+-- GRANT ROLE FINANCE_PROD_ROLE    TO USER <ci_service_account>;
+-- GRANT ROLE PRODUCT_PROD_ROLE    TO USER <ci_service_account>;
+-- GRANT ROLE MARKETING_PROD_ROLE  TO USER <ci_service_account>;
+-- GRANT ROLE ANALYTICS_PROD_ROLE  TO USER <ci_service_account>;
+
+
+-- =============================================================================
+-- SECTION 10 — VERIFY
+-- Run after setup. Confirms isolation and access are working as designed.
+-- =============================================================================
+
+-- 10a. Platform can read raw TPC-H
+USE ROLE PLATFORM_DEV_ROLE;
+USE WAREHOUSE PLATFORM_WH;
+SELECT COUNT(*) FROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS;
+-- Expected: 1,500,000 ✓
+
+-- 10b. Finance cannot read raw source (isolation check — should error)
+-- USE ROLE FINANCE_DEV_ROLE;
+-- SELECT * FROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS LIMIT 1;
+-- Expected: Insufficient privileges ✓
+
+-- 10c. Marketing cannot read Finance database
+-- USE ROLE MARKETING_DEV_ROLE;
+-- SHOW SCHEMAS IN DATABASE FINANCE_DEV;
+-- Expected: empty or error ✓
+
+-- 10d. Analytics can see Commercial database (USAGE granted)
+--      but cannot read schemas yet (run grants.sql first)
+-- USE ROLE ANALYTICS_DEV_ROLE;
+-- SHOW DATABASES LIKE '%COMMERCIAL%';
+-- Expected: COMMERCIAL_DEV and COMMERCIAL_PROD visible ✓
+-- SHOW SCHEMAS IN DATABASE COMMERCIAL_DEV;
+-- Expected: empty until grants.sql is run and dbt build has created schemas ✓

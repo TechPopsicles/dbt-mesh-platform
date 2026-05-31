@@ -1,0 +1,343 @@
+# =============================================================================
+# dbt-mesh-platform  ·  profiles.yml
+# =============================================================================
+# Copy this file to ~/.dbt/profiles.yml and set the environment variables
+# listed in the "Local setup" section below.
+# NEVER commit the real profiles.yml — it is in .gitignore.
+#
+# Auth: RSA private key across all targets (dev / ci / prod).
+#   Key location:
+#     dev   →  ~/.dbt/rsa_key.p8          (generated once, stored locally)
+#     ci    →  /home/runner/.dbt/rsa_key.p8  (written by GitHub Actions from secret)
+#     prod  →  /home/runner/.dbt/rsa_key.p8  (same CI runner, same secret)
+#
+# Schema naming (controlled by DBT_USER_SCHEMA):
+#   dev   →  {your_username}_staging    e.g.  kiran_staging
+#   ci    →  pr_{n}_staging             e.g.  pr_12_staging
+#   prod  →  staging                    (no prefix — database carries env context)
+#
+# =============================================================================
+# LOCAL SETUP  (add to ~/.zshrc or ~/.bashrc)
+# =============================================================================
+#
+#   export SNOWFLAKE_ACCOUNT="abc12345.us-east-1"
+#   export SNOWFLAKE_USER="your.name@company.com"
+#   export SNOWFLAKE_PRIVATE_KEY_PATH="~/.dbt/rsa_key.p8"
+#   export SNOWFLAKE_PRIVATE_KEY_PASSPHRASE=""     # omit if key has no passphrase
+#   export DBT_USER_SCHEMA="kiran"                 # your Snowflake username / short name
+#
+# Generate your RSA key pair (run once):
+#   openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out ~/.dbt/rsa_key.p8
+#   openssl rsa -in ~/.dbt/rsa_key.p8 -pubout -out ~/.dbt/rsa_key.pub
+#   chmod 600 ~/.dbt/rsa_key.p8
+#
+# Register the public key in Snowflake (run as USERADMIN):
+#   ALTER USER your_username SET RSA_PUBLIC_KEY='<contents of rsa_key.pub>';
+#
+# =============================================================================
+
+
+# ── PLATFORM ──────────────────────────────────────────────────────────────────
+# Owns: Snowflake Sample Data sources, staging views, shared macros
+# Reads: SNOWFLAKE_SAMPLE_DATA (raw sources — platform only)
+# Writes: PLATFORM_DEV (dev/ci) · PLATFORM_PROD (prod)
+platform:
+  target: dev
+  outputs:
+
+    dev:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH', '~/.dbt/rsa_key.p8') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       PLATFORM_DEV_ROLE
+      warehouse:                  PLATFORM_WH
+      database:                   PLATFORM_DEV
+      schema:                     "{{ env_var('DBT_USER_SCHEMA', 'dev') }}"
+      threads:                    4
+      query_tag:                  platform_dev
+      client_session_keep_alive:  false
+
+    ci:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       PLATFORM_DEV_ROLE
+      warehouse:                  PLATFORM_WH
+      database:                   PLATFORM_DEV
+      schema:                     "{{ env_var('DBT_USER_SCHEMA') }}"   # pr_{n} — set by GitHub Actions
+      threads:                    4
+      query_tag:                  platform_ci
+      client_session_keep_alive:  false
+
+    prod:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       PLATFORM_PROD_ROLE
+      warehouse:                  PLATFORM_WH
+      database:                   PLATFORM_PROD
+      schema:                     ""                                    # prod: no prefix → clean layer names
+      threads:                    8
+      query_tag:                  platform_prod
+      client_session_keep_alive:  false
+
+
+# ── COMMERCIAL ────────────────────────────────────────────────────────────────
+# Owns: sales, crm, partnerships
+# Reads: PLATFORM_DEV/PROD staging
+# Writes: COMMERCIAL_DEV (dev/ci) · COMMERCIAL_PROD (prod)
+commercial:
+  target: dev
+  outputs:
+
+    dev:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH', '~/.dbt/rsa_key.p8') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       COMMERCIAL_DEV_ROLE
+      warehouse:                  COMMERCIAL_WH
+      database:                   COMMERCIAL_DEV
+      schema:                     "{{ env_var('DBT_USER_SCHEMA', 'dev') }}"
+      threads:                    4
+      query_tag:                  commercial_dev
+      client_session_keep_alive:  false
+
+    ci:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       COMMERCIAL_DEV_ROLE
+      warehouse:                  COMMERCIAL_WH
+      database:                   COMMERCIAL_DEV
+      schema:                     "{{ env_var('DBT_USER_SCHEMA') }}"
+      threads:                    4
+      query_tag:                  commercial_ci
+      client_session_keep_alive:  false
+
+    prod:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       COMMERCIAL_PROD_ROLE
+      warehouse:                  COMMERCIAL_WH
+      database:                   COMMERCIAL_PROD
+      schema:                     ""
+      threads:                    8
+      query_tag:                  commercial_prod
+      client_session_keep_alive:  false
+
+
+# ── FINANCE ───────────────────────────────────────────────────────────────────
+# Owns: ARR, billing, fp&a  |  SOX-sensitive models
+# Reads: PLATFORM staging · COMMERCIAL fct_deals_closed only
+# Writes: FINANCE_DEV (dev/ci) · FINANCE_PROD (prod)
+finance:
+  target: dev
+  outputs:
+
+    dev:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH', '~/.dbt/rsa_key.p8') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       FINANCE_DEV_ROLE
+      warehouse:                  FINANCE_WH
+      database:                   FINANCE_DEV
+      schema:                     "{{ env_var('DBT_USER_SCHEMA', 'dev') }}"
+      threads:                    4
+      query_tag:                  finance_dev
+      client_session_keep_alive:  false
+
+    ci:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       FINANCE_DEV_ROLE
+      warehouse:                  FINANCE_WH
+      database:                   FINANCE_DEV
+      schema:                     "{{ env_var('DBT_USER_SCHEMA') }}"
+      threads:                    4
+      query_tag:                  finance_ci
+      client_session_keep_alive:  false
+
+    prod:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       FINANCE_PROD_ROLE
+      warehouse:                  FINANCE_WH
+      database:                   FINANCE_PROD
+      schema:                     ""
+      threads:                    8
+      query_tag:                  finance_prod
+      client_session_keep_alive:  false
+
+
+# ── PRODUCT ───────────────────────────────────────────────────────────────────
+# Owns: events, features, growth, ml platform
+# Reads: PLATFORM staging only
+# Writes: PRODUCT_DEV (dev/ci) · PRODUCT_PROD (prod)
+product:
+  target: dev
+  outputs:
+
+    dev:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH', '~/.dbt/rsa_key.p8') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       PRODUCT_DEV_ROLE
+      warehouse:                  PRODUCT_WH
+      database:                   PRODUCT_DEV
+      schema:                     "{{ env_var('DBT_USER_SCHEMA', 'dev') }}"
+      threads:                    4
+      query_tag:                  product_dev
+      client_session_keep_alive:  false
+
+    ci:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       PRODUCT_DEV_ROLE
+      warehouse:                  PRODUCT_WH
+      database:                   PRODUCT_DEV
+      schema:                     "{{ env_var('DBT_USER_SCHEMA') }}"
+      threads:                    4
+      query_tag:                  product_ci
+      client_session_keep_alive:  false
+
+    prod:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       PRODUCT_PROD_ROLE
+      warehouse:                  PRODUCT_WH
+      database:                   PRODUCT_PROD
+      schema:                     ""
+      threads:                    8
+      query_tag:                  product_prod
+      client_session_keep_alive:  false
+
+
+# ── MARKETING ─────────────────────────────────────────────────────────────────
+# Owns: seo, sem, content, lifecycle
+# Reads: PLATFORM staging · COMMERCIAL dim_customers only
+# Writes: MARKETING_DEV (dev/ci) · MARKETING_PROD (prod)
+marketing:
+  target: dev
+  outputs:
+
+    dev:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH', '~/.dbt/rsa_key.p8') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       MARKETING_DEV_ROLE
+      warehouse:                  MARKETING_WH
+      database:                   MARKETING_DEV
+      schema:                     "{{ env_var('DBT_USER_SCHEMA', 'dev') }}"
+      threads:                    4
+      query_tag:                  marketing_dev
+      client_session_keep_alive:  false
+
+    ci:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       MARKETING_DEV_ROLE
+      warehouse:                  MARKETING_WH
+      database:                   MARKETING_DEV
+      schema:                     "{{ env_var('DBT_USER_SCHEMA') }}"
+      threads:                    4
+      query_tag:                  marketing_ci
+      client_session_keep_alive:  false
+
+    prod:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       MARKETING_PROD_ROLE
+      warehouse:                  MARKETING_WH
+      database:                   MARKETING_PROD
+      schema:                     ""
+      threads:                    8
+      query_tag:                  marketing_prod
+      client_session_keep_alive:  false
+
+
+# ── ANALYTICS ─────────────────────────────────────────────────────────────────
+# Owns: cross-domain marts, metric registry, semantic layer
+# Reads: all domain marts (public contracts) · Finance FP&A excluded
+# Writes: ANALYTICS_DEV (dev/ci) · ANALYTICS_PROD (prod)
+analytics:
+  target: dev
+  outputs:
+
+    dev:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH', '~/.dbt/rsa_key.p8') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       ANALYTICS_DEV_ROLE
+      warehouse:                  ANALYTICS_WH
+      database:                   ANALYTICS_DEV
+      schema:                     "{{ env_var('DBT_USER_SCHEMA', 'dev') }}"
+      threads:                    4
+      query_tag:                  analytics_dev
+      client_session_keep_alive:  false
+
+    ci:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       ANALYTICS_DEV_ROLE
+      warehouse:                  ANALYTICS_WH
+      database:                   ANALYTICS_DEV
+      schema:                     "{{ env_var('DBT_USER_SCHEMA') }}"
+      threads:                    4
+      query_tag:                  analytics_ci
+      client_session_keep_alive:  false
+
+    prod:
+      type: snowflake
+      account:                    "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:                       "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path:           "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH') }}"
+      private_key_passphrase:     "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role:                       ANALYTICS_PROD_ROLE
+      warehouse:                  ANALYTICS_WH
+      database:                   ANALYTICS_PROD
+      schema:                     ""
+      threads:                    8
+      query_tag:                  analytics_prod
+      client_session_keep_alive:  false

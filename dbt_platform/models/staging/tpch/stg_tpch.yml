@@ -1,0 +1,300 @@
+version: 2
+models:
+- name: stg_tpch__customer
+  description: Staged and renamed records from TPCH.CUSTOMER. One row per customer.
+    Renamed columns to snake_case business names. Enrich this description with business
+    context.
+  config:
+    tags:
+    - platform
+    - staging
+    - tpch
+    meta:
+      owner: platform-team@techminionacademy.com
+      grain: TBD
+      access: public
+  columns:
+  - name: custkey
+    description: Foreign key reference.
+    tests:
+    - not_null
+    - unique
+  - name: name
+    description: Name.
+  - name: address
+    description: Address.
+  - name: nationkey
+    description: Foreign key reference.
+    tests:
+    - not_null
+  - name: phone
+    description: Phone.
+  - name: acctbal
+    description: Acctbal.
+    tests:
+    - not_null
+  - name: mktsegment
+    description: Mktsegment.
+  - name: comment
+    description: Free-text comment field. Not used in analytics.
+- name: stg_tpch__lineitem
+  description: Staged and renamed records from TPCH.LINEITEM. One row per lineitem.
+    Renamed columns to snake_case business names. Enrich this description with business
+    context.
+  config:
+    tags:
+    - platform
+    - staging
+    - tpch
+    meta:
+      owner: platform-team@techminionacademy.com
+      grain: TBD
+      access: public
+  columns:
+  - name: orderkey
+    description: Foreign key reference.
+    tests:
+    - not_null
+  - name: partkey
+    description: Foreign key reference.
+    tests:
+    - not_null
+  - name: suppkey
+    description: Foreign key reference.
+    tests:
+    - not_null
+  - name: linenumber
+    description: Linenumber.
+    tests:
+    - not_null
+  - name: quantity
+    description: Quantity.
+    tests:
+    - not_null
+  - name: extendedprice
+    description: Monetary value for extendedprice.
+    tests:
+    - not_null
+  - name: discount
+    description: Discount.
+    tests:
+    - not_null
+  - name: tax
+    description: Tax.
+    tests:
+    - not_null
+  - name: returnflag
+    description: Categorical field — returnflag.
+  - name: linestatus
+    description: Categorical field — linestatus.
+  - name: shipdate
+    description: Date/timestamp for shipdate. Cast to date.
+    tests:
+    - not_null
+  - name: commitdate
+    description: Date/timestamp for commitdate. Cast to date.
+    tests:
+    - not_null
+  - name: receiptdate
+    description: Date/timestamp for receiptdate. Cast to date.
+    tests:
+    - not_null
+  - name: shipinstruct
+    description: Shipinstruct.
+  - name: shipmode
+    description: Categorical field — shipmode.
+  - name: comment
+    description: Free-text comment field. Not used in analytics.
+- name: stg_tpch__nation
+  description: Staged and renamed records from TPCH.NATION. One row per nation. Renamed
+    columns to snake_case business names. Enrich this description with business context.
+  config:
+    tags:
+    - platform
+    - staging
+    - tpch
+    meta:
+      owner: platform-team@techminionacademy.com
+      grain: TBD
+      access: public
+  columns:
+  - name: nationkey
+    description: Foreign key reference.
+    tests:
+    - not_null
+  - name: name
+    description: Name.
+  - name: regionkey
+    description: Foreign key reference.
+    tests:
+    - not_null
+  - name: comment
+    description: Free-text comment field. Not used in analytics.
+- name: stg_tpch__orders
+  description: Staged and renamed records from TPCH.ORDERS. One row per orders. Renamed
+    columns to snake_case business names. Enrich this description with business context.
+  config:
+    tags:
+    - platform
+    - staging
+    - tpch
+    meta:
+      owner: platform-team@techminionacademy.com
+      grain: TBD
+      access: public
+  columns:
+  - name: orderkey
+    description: Foreign key reference.
+    tests:
+    - not_null
+  - name: custkey
+    description: Foreign key reference.
+    tests:
+    - not_null
+  - name: orderstatus
+    description: Categorical field — orderstatus.
+  - name: totalprice
+    description: Monetary value for totalprice.
+    tests:
+    - not_null
+  - name: orderdate
+    description: Date/timestamp for orderdate. Cast to date.
+    tests:
+    - not_null
+  - name: orderpriority
+    description: Orderpriority.
+  - name: clerk
+    description: Clerk.
+  - name: shippriority
+    description: Shippriority.
+    tests:
+    - not_null
+  - name: comment
+    description: Free-text comment field. Not used in analytics.
+- name: stg_tpch__part
+  description: Staged and renamed records from TPCH.PART. One row per part. Renamed
+    columns to snake_case business names. Enrich this description with business context.
+  config:
+    tags:
+    - platform
+    - staging
+    - tpch
+    meta:
+      owner: platform-team@techminionacademy.com
+      grain: TBD
+      access: public
+  columns:
+  - name: partkey
+    description: Foreign key reference.
+    tests:
+    - not_null
+    - unique
+  - name: name
+    description: Name.
+  - name: mfgr
+    description: Mfgr.
+  - name: brand
+    description: Brand.
+  - name: type
+    description: Categorical field — type.
+  - name: size
+    description: Size.
+    tests:
+    - not_null
+  - name: container
+    description: Container.
+  - name: retailprice
+    description: Monetary value for retailprice.
+    tests:
+    - not_null
+  - name: comment
+    description: Free-text comment field. Not used in analytics.
+- name: stg_tpch__partsupp
+  description: Staged and renamed records from TPCH.PARTSUPP. One row per partsupp.
+    Renamed columns to snake_case business names. Enrich this description with business
+    context.
+  config:
+    tags:
+    - platform
+    - staging
+    - tpch
+    meta:
+      owner: platform-team@techminionacademy.com
+      grain: TBD
+      access: public
+  columns:
+  - name: partkey
+    description: Foreign key reference.
+    tests:
+    - not_null
+  - name: suppkey
+    description: Foreign key reference.
+    tests:
+    - not_null
+  - name: availqty
+    description: Availqty.
+    tests:
+    - not_null
+  - name: supplycost
+    description: Monetary value for supplycost.
+    tests:
+    - not_null
+  - name: comment
+    description: Free-text comment field. Not used in analytics.
+- name: stg_tpch__region
+  description: Staged and renamed records from TPCH.REGION. One row per region. Renamed
+    columns to snake_case business names. Enrich this description with business context.
+  config:
+    tags:
+    - platform
+    - staging
+    - tpch
+    meta:
+      owner: platform-team@techminionacademy.com
+      grain: TBD
+      access: public
+  columns:
+  - name: regionkey
+    description: Foreign key reference.
+    tests:
+    - not_null
+    - unique
+  - name: name
+    description: Name.
+  - name: comment
+    description: Free-text comment field. Not used in analytics.
+- name: stg_tpch__supplier
+  description: Staged and renamed records from TPCH.SUPPLIER. One row per supplier.
+    Renamed columns to snake_case business names. Enrich this description with business
+    context.
+  config:
+    tags:
+    - platform
+    - staging
+    - tpch
+    meta:
+      owner: platform-team@techminionacademy.com
+      grain: TBD
+      access: public
+  columns:
+  - name: suppkey
+    description: Foreign key reference.
+    tests:
+    - not_null
+    - unique
+  - name: name
+    description: Name.
+  - name: address
+    description: Address.
+  - name: nationkey
+    description: Foreign key reference.
+    tests:
+    - not_null
+  - name: phone
+    description: Phone.
+  - name: acctbal
+    description: Acctbal.
+    tests:
+    - not_null
+  - name: comment
+    description: Free-text comment field. Not used in analytics.

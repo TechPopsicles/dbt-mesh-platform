@@ -1,0 +1,82 @@
+name: dbt_platform
+version: "1.0.0"
+config-version: 2
+
+profile: platform
+
+# ── Hooks ────────────────────────────────────────────────────────────────────
+# Runs automatically after every dbt build / dbt run.
+# Grants cross-domain read access on platform schemas — no manual SQL needed.
+# CI runs grant on pr_{n}_staging so cross-project refs work in CI too.
+on-run-end:
+  - "{{ grant_platform_schemas() }}"
+
+# ── Path configuration ───────────────────────────────────────────────────────
+model-paths:    ["models"]
+analysis-paths: ["analyses"]
+test-paths:     ["tests"]
+seed-paths:     ["seeds"]
+macro-paths:    ["macros"]
+snapshot-paths: ["snapshots"]
+docs-paths:     ["docs"]
+
+target-path:   "target"
+clean-targets: ["target", "dbt_packages"]
+
+# ── Model configuration by folder ───────────────────────────────────────────
+# Platform project owns sources + raw staging layer only.
+# All public contracts live in domain projects (commercial, finance, etc.)
+models:
+  dbt_platform:
+
+    staging:
+      +materialized: view
+      +access: public          # staging views are public — all domain projects ref() them
+      +schema: staging
+      +tags: ["platform", "staging"]
+
+      tpch:
+        +tags: ["platform", "staging", "tpch"]
+        +meta:
+          source_system: "snowflake_sample_data"
+          domain: "tpch"
+
+      tpcds:
+        +tags: ["platform", "staging", "tpcds"]
+        +meta:
+          source_system: "snowflake_sample_data"
+          domain: "tpcds"
+
+    intermediate:
+      +materialized: view
+      +access: public
+      +schema: intermediate
+      +tags: ["platform", "intermediate"]
+
+    marts:
+      +materialized: table
+      +access: public
+      +schema: marts
+      +tags: ["platform", "marts"]
+      +contract:
+        enforced: true
+
+# ── Seed configuration ───────────────────────────────────────────────────────
+seeds:
+  dbt_platform:
+    +schema: seeds
+    +quote_columns: false
+
+# ── Snapshot configuration ───────────────────────────────────────────────────
+snapshots:
+  dbt_platform:
+    +schema: snapshots
+    +strategy: timestamp
+    +updated_at: updated_at
+
+# ── Test severity ────────────────────────────────────────────────────────────
+tests:
+  dbt_platform:
+    +severity: error
+    +store_failures: true
+    +schema: test_failures
