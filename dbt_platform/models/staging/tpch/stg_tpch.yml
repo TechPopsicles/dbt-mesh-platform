@@ -12,6 +12,8 @@ models:
       owner: platform-team@techminionacademy.com
       grain: TBD
       access: public
+    contract:
+      enforced: false
   columns:
   - name: custkey
     description: Foreign key to the customer entity in the TPC-H source system; the natural business identifier assigned to
@@ -24,27 +26,33 @@ models:
           field: custkey
         config:
           severity: warn
+    data_type: number
   - name: name
     description: Full name of the customer account as recorded in the source system. PII — mask in public marts.
     data_tests:
     - not_null
+    data_type: varchar
   - name: address
     description: Street or mailing address associated with the customer account. PII — mask in public marts.
     data_tests:
     - not_null
+    data_type: varchar
   - name: nationkey
     description: Foreign key to the nation dimension, indicating the country where the customer is located.
     data_tests:
     - not_null
+    data_type: number
   - name: phone
     description: Customer contact phone number as provided in the source system. PII — mask in public marts.
     data_tests:
     - not_null
+    data_type: varchar
   - name: acctbal
     description: Current account balance for the customer in the source currency (USD); positive values indicate credit, negative
       values indicate outstanding debt.
     data_tests:
     - not_null
+    data_type: varchar
   - name: mktsegment
     description: Market segment classification assigned to the customer (e.g., AUTOMOBILE, BUILDING, FURNITURE, MACHINERY,
       HOUSEHOLD), used to group customers by industry or purchasing behavior.
@@ -60,8 +68,10 @@ models:
           - MACHINERY
         config:
           severity: warn
+    data_type: varchar
   - name: comment
     description: Free-text remarks entered against the customer record in the source system. Not used in analytics.
+    data_type: varchar
 - name: stg_tpch__lineitem
   description: Staged and renamed records from TPCH.LINEITEM. One row per lineitem. Renamed columns to snake_case business
     names. Enrich this description with business context.
@@ -74,11 +84,14 @@ models:
       owner: platform-team@techminionacademy.com
       grain: TBD
       access: public
+    contract:
+      enforced: false
   columns:
   - name: orderkey
     description: Foreign key to the order in stg_tpch__orders that this line item belongs to.
     data_tests:
     - not_null
+    data_type: number
   - name: partkey
     description: Foreign key to the part in stg_tpch__part that was ordered on this line item.
     data_tests:
@@ -89,6 +102,7 @@ models:
           field: partkey
         config:
           severity: warn
+    data_type: number
   - name: suppkey
     description: Foreign key to the supplier in stg_tpch__supplier fulfilling this line item.
     data_tests:
@@ -99,6 +113,7 @@ models:
           field: suppkey
         config:
           severity: warn
+    data_type: number
   - name: linenumber
     description: Sequential position of this line item within its parent order, starting at 1. Used to uniquely identify individual
       lines on a multi-item order.
@@ -116,20 +131,24 @@ models:
           - '7'
         config:
           severity: warn
+    data_type: number
   - name: quantity
     description: Number of units of the part ordered on this line item.
     data_tests:
     - not_null
+    data_type: number
   - name: extendedprice
     description: Gross revenue amount for this line item before discounts and taxes are applied, expressed in USD. Calculated
       as quantity multiplied by the part's unit price.
     data_tests:
     - not_null
+    data_type: number
   - name: discount
     description: Fractional discount rate applied to this line item's extended price, expressed as a decimal between 0 and
       1 (e.g., 0.05 represents a 5% discount).
     data_tests:
     - not_null
+    data_type: number
   - name: tax
     description: Fractional tax rate applied to this line item after discounts, expressed as a decimal (e.g., 0.08 represents
       8% tax).
@@ -149,6 +168,7 @@ models:
           - '0.08'
         config:
           severity: warn
+    data_type: varchar
   - name: returnflag
     description: Status code indicating whether the line item has been returned or is flagged for adjustment. Common values
       include 'R' (returned), 'A' (accepted), and 'N' (not returned).
@@ -162,6 +182,7 @@ models:
           - R
         config:
           severity: warn
+    data_type: boolean
   - name: linestatus
     description: Fulfillment status of the line item relative to the ship date. 'O' indicates the item is still open/outstanding;
       'F' indicates it has been fully shipped.
@@ -174,18 +195,22 @@ models:
           - O
         config:
           severity: warn
+    data_type: varchar
   - name: shipdate
     description: Date the line item was physically shipped from the supplier to the customer.
     data_tests:
     - not_null
+    data_type: date
   - name: commitdate
     description: Date the supplier committed to having the line item ready for shipment.
     data_tests:
     - not_null
+    data_type: date
   - name: receiptdate
     description: Date the customer received the shipped line item, used to measure actual delivery lead time.
     data_tests:
     - not_null
+    data_type: date
   - name: shipinstruct
     description: Delivery instruction provided for this line item specifying how the shipment should be handled at destination
       (e.g., 'DELIVER IN PERSON', 'COLLECT COD').
@@ -200,6 +225,7 @@ models:
           - TAKE BACK RETURN
         config:
           severity: warn
+    data_type: varchar
   - name: shipmode
     description: Mode of transport used to ship this line item (e.g., 'AIR', 'RAIL', 'TRUCK', 'MAIL'). Used in shipping cost
       and lead time analyses.
@@ -217,8 +243,10 @@ models:
           - TRUCK
         config:
           severity: warn
+    data_type: varchar
   - name: comment
     description: Free-text internal comment recorded against the line item at the source. Not used in analytics.
+    data_type: varchar
 - name: stg_tpch__nation
   description: Staged and renamed records from TPCH.NATION. One row per nation. Renamed columns to snake_case business names.
     Enrich this description with business context.
@@ -231,16 +259,20 @@ models:
       owner: platform-team@techminionacademy.com
       grain: TBD
       access: public
+    contract:
+      enforced: false
   columns:
   - name: nationkey
     description: Foreign key to the nation in the TPC-H nations reference table; the original integer identifier assigned
       to each nation in the source system.
     data_tests:
     - not_null
+    data_type: number
   - name: name
     description: Standard English name of the nation (e.g., 'UNITED STATES', 'FRANCE'). PII — mask in public marts.
     data_tests:
     - not_null
+    data_type: varchar
   - name: regionkey
     description: Foreign key to the geographic region that this nation belongs to, linking to the regions reference table.
     data_tests:
@@ -251,9 +283,11 @@ models:
           field: regionkey
         config:
           severity: warn
+    data_type: number
   - name: comment
     description: Free-text annotation sourced from the TPC-H benchmark dataset. Not used in analytics and should be excluded
       from downstream models.
+    data_type: varchar
 - name: stg_tpch__orders
   description: Staged and renamed records from TPCH.ORDERS. One row per orders. Renamed columns to snake_case business names.
     Enrich this description with business context.
@@ -266,11 +300,14 @@ models:
       owner: platform-team@techminionacademy.com
       grain: TBD
       access: public
+    contract:
+      enforced: false
   columns:
   - name: orderkey
     description: Foreign key to the orders table; the natural integer key assigned to each order in the TPC-H source system.
     data_tests:
     - not_null
+    data_type: number
   - name: custkey
     description: Foreign key to the customer who placed the order.
     data_tests:
@@ -281,6 +318,7 @@ models:
           field: custkey
         config:
           severity: warn
+    data_type: number
   - name: orderstatus
     description: 'Single-character code reflecting the fulfillment state of the order: ''O'' for open, ''F'' for fully fulfilled,
       and ''P'' for partially fulfilled.'
@@ -294,15 +332,18 @@ models:
           - P
         config:
           severity: warn
+    data_type: varchar
   - name: totalprice
     description: Total monetary value of the order in USD, aggregating all line item extended prices after discounts and before
       taxes.
     data_tests:
     - not_null
+    data_type: number
   - name: orderdate
     description: Date on which the customer placed the order, cast from a source timestamp to a plain date.
     data_tests:
     - not_null
+    data_type: date
   - name: orderpriority
     description: Categorical label ranking the business urgency of the order, ranging from '1-URGENT' to '5-LOW'.
     data_tests:
@@ -317,17 +358,21 @@ models:
           - 5-LOW
         config:
           severity: warn
+    data_type: number
   - name: clerk
     description: Identifier of the clerk or sales representative responsible for processing and recording the order.
     data_tests:
     - not_null
+    data_type: varchar
   - name: shippriority
     description: Numeric ranking that determines fulfillment sequencing for the order; higher values indicate greater shipping
       urgency.
     data_tests:
     - not_null
+    data_type: number
   - name: comment
     description: Free-text notes attached to the order in the source system. Not used in analytics.
+    data_type: varchar
 - name: stg_tpch__part
   description: Staged and renamed records from TPCH.PART. One row per part. Renamed columns to snake_case business names.
     Enrich this description with business context.
@@ -340,17 +385,21 @@ models:
       owner: platform-team@techminionacademy.com
       grain: TBD
       access: public
+    contract:
+      enforced: false
   columns:
   - name: partkey
     description: Foreign key to the part entity; the original integer part identifier from the TPC-H source system.
     data_tests:
     - not_null
     - unique
+    data_type: number
   - name: name
     description: Unique descriptive name assigned to the part, composed of random word combinations used to distinguish individual
       parts. PII — mask in public marts.
     data_tests:
     - not_null
+    data_type: varchar
   - name: mfgr
     description: Manufacturer that produces the part, encoded as one of five manufacturer labels (e.g., Manufacturer#1).
     data_tests:
@@ -365,30 +414,37 @@ models:
           - Manufacturer#5
         config:
           severity: warn
+    data_type: varchar
   - name: brand
     description: Brand designation of the part within its manufacturer, used to group parts by product line (e.g., Brand#13).
     data_tests:
     - not_null
+    data_type: varchar
   - name: type
     description: Categorical classification of the part describing its material and finish (e.g., SMALL BRUSHED COPPER); used
       for product segmentation and filtering.
     data_tests:
     - not_null
+    data_type: varchar
   - name: size
     description: Numeric measurement indicating the relative size of the part, ranging from 1 to 50.
     data_tests:
     - not_null
+    data_type: varchar
   - name: container
     description: Packaging type used to ship the part, combining a size category and container form (e.g., SM BOX, LG DRUM);
       drives shipping and logistics logic.
     data_tests:
     - not_null
+    data_type: varchar
   - name: retailprice
     description: Suggested retail price of the part in USD, derived from the TPC-H pricing formula based on part key.
     data_tests:
     - not_null
+    data_type: number
   - name: comment
     description: Free-text notes from the source system with no standardized structure. Not used in analytics.
+    data_type: varchar
 - name: stg_tpch__partsupp
   description: Staged and renamed records from TPCH.PARTSUPP. One row per partsupp. Renamed columns to snake_case business
     names. Enrich this description with business context.
@@ -401,6 +457,8 @@ models:
       owner: platform-team@techminionacademy.com
       grain: TBD
       access: public
+    contract:
+      enforced: false
   columns:
   - name: partkey
     description: Foreign key to the part being supplied, linking this record to the part dimension.
@@ -412,6 +470,7 @@ models:
           field: partkey
         config:
           severity: warn
+    data_type: number
   - name: suppkey
     description: Foreign key to the supplier fulfilling this part, linking this record to the supplier dimension.
     data_tests:
@@ -422,17 +481,21 @@ models:
           field: suppkey
         config:
           severity: warn
+    data_type: number
   - name: availqty
     description: The number of units of this part currently held in stock by the supplier and available for order.
     data_tests:
     - not_null
+    data_type: varchar
   - name: supplycost
     description: The cost (in USD) charged by the supplier to provide one unit of the associated part; used in procurement
       cost analysis.
     data_tests:
     - not_null
+    data_type: number
   - name: comment
     description: Free-text notes associated with the part-supplier relationship. Not used in analytics.
+    data_type: varchar
 - name: stg_tpch__region
   description: Staged and renamed records from TPCH.REGION. One row per region. Renamed columns to snake_case business names.
     Enrich this description with business context.
@@ -445,6 +508,8 @@ models:
       owner: platform-team@techminionacademy.com
       grain: TBD
       access: public
+    contract:
+      enforced: false
   columns:
   - name: regionkey
     description: Foreign key to the region in the raw TPC-H source; the native integer identifier assigned to each geographic
@@ -452,6 +517,7 @@ models:
     data_tests:
     - not_null
     - unique
+    data_type: number
   - name: name
     description: Broad geographic region label (e.g., AFRICA, EUROPE, ASIA) used to group nations and suppliers for supply
       chain reporting.
@@ -467,8 +533,10 @@ models:
           - MIDDLE EAST
         config:
           severity: warn
+    data_type: varchar
   - name: comment
     description: Free-text annotation from the TPC-H source data. Not used in analytics and excluded from downstream models.
+    data_type: varchar
 - name: stg_tpch__supplier
   description: Staged and renamed records from TPCH.SUPPLIER. One row per supplier. Renamed columns to snake_case business
     names. Enrich this description with business context.
@@ -481,6 +549,8 @@ models:
       owner: platform-team@techminionacademy.com
       grain: TBD
       access: public
+    contract:
+      enforced: false
   columns:
   - name: suppkey
     description: Foreign key to the supplier dimension; the raw numeric identifier assigned to each supplier in the TPC-H
@@ -493,27 +563,34 @@ models:
           field: suppkey
         config:
           severity: warn
+    data_type: number
   - name: name
     description: Registered business name of the supplier. PII — mask in public marts.
     data_tests:
     - not_null
+    data_type: varchar
   - name: address
     description: Street-level mailing address of the supplier. PII — mask in public marts.
     data_tests:
     - not_null
+    data_type: varchar
   - name: nationkey
     description: Foreign key to the nation dimension, indicating the country where the supplier is registered.
     data_tests:
     - not_null
+    data_type: number
   - name: phone
     description: Primary contact phone number for the supplier. PII — mask in public marts.
     data_tests:
     - not_null
+    data_type: varchar
   - name: acctbal
     description: Supplier's current account balance in the benchmark currency; positive values indicate credit owed to the
       supplier, negative values indicate an outstanding balance.
     data_tests:
     - not_null
+    data_type: varchar
   - name: comment
     description: Free-text notes from the source system about the supplier. Not used in analytics and may contain inconsistent
       or legacy data.
+    data_type: varchar
