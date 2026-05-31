@@ -1,9 +1,8 @@
 version: 2
 models:
 - name: stg_tpch__customer
-  description: Staged and renamed records from TPCH.CUSTOMER. One row per customer.
-    Renamed columns to snake_case business names. Enrich this description with business
-    context.
+  description: Staged and renamed records from TPCH.CUSTOMER. One row per customer. Renamed columns to snake_case business
+    names. Enrich this description with business context.
   config:
     tags:
     - platform
@@ -15,32 +14,34 @@ models:
       access: public
   columns:
   - name: custkey
-    description: Foreign key reference.
+    description: Foreign key to the customer entity in the TPC-H source system; the natural business identifier assigned to
+      each customer record.
     tests:
     - not_null
     - unique
   - name: name
-    description: Name.
+    description: Full name of the customer account as recorded in the source system. PII — mask in public marts.
   - name: address
-    description: Address.
+    description: Street or mailing address associated with the customer account. PII — mask in public marts.
   - name: nationkey
-    description: Foreign key reference.
+    description: Foreign key to the nation dimension, indicating the country where the customer is located.
     tests:
     - not_null
   - name: phone
-    description: Phone.
+    description: Customer contact phone number as provided in the source system. PII — mask in public marts.
   - name: acctbal
-    description: Acctbal.
+    description: Current account balance for the customer in the source currency (USD); positive values indicate credit, negative
+      values indicate outstanding debt.
     tests:
     - not_null
   - name: mktsegment
-    description: Mktsegment.
+    description: Market segment classification assigned to the customer (e.g., AUTOMOBILE, BUILDING, FURNITURE, MACHINERY,
+      HOUSEHOLD), used to group customers by industry or purchasing behavior.
   - name: comment
-    description: Free-text comment field. Not used in analytics.
+    description: Free-text remarks entered against the customer record in the source system. Not used in analytics.
 - name: stg_tpch__lineitem
-  description: Staged and renamed records from TPCH.LINEITEM. One row per lineitem.
-    Renamed columns to snake_case business names. Enrich this description with business
-    context.
+  description: Staged and renamed records from TPCH.LINEITEM. One row per lineitem. Renamed columns to snake_case business
+    names. Enrich this description with business context.
   config:
     tags:
     - platform
@@ -52,62 +53,70 @@ models:
       access: public
   columns:
   - name: orderkey
-    description: Foreign key reference.
+    description: Foreign key to the order in stg_tpch__orders that this line item belongs to.
     tests:
     - not_null
   - name: partkey
-    description: Foreign key reference.
+    description: Foreign key to the part in stg_tpch__part that was ordered on this line item.
     tests:
     - not_null
   - name: suppkey
-    description: Foreign key reference.
+    description: Foreign key to the supplier in stg_tpch__supplier fulfilling this line item.
     tests:
     - not_null
   - name: linenumber
-    description: Linenumber.
+    description: Sequential position of this line item within its parent order, starting at 1. Used to uniquely identify individual
+      lines on a multi-item order.
     tests:
     - not_null
   - name: quantity
-    description: Quantity.
+    description: Number of units of the part ordered on this line item.
     tests:
     - not_null
   - name: extendedprice
-    description: Monetary value for extendedprice.
+    description: Gross revenue amount for this line item before discounts and taxes are applied, expressed in USD. Calculated
+      as quantity multiplied by the part's unit price.
     tests:
     - not_null
   - name: discount
-    description: Discount.
+    description: Fractional discount rate applied to this line item's extended price, expressed as a decimal between 0 and
+      1 (e.g., 0.05 represents a 5% discount).
     tests:
     - not_null
   - name: tax
-    description: Tax.
+    description: Fractional tax rate applied to this line item after discounts, expressed as a decimal (e.g., 0.08 represents
+      8% tax).
     tests:
     - not_null
   - name: returnflag
-    description: Categorical field — returnflag.
+    description: Status code indicating whether the line item has been returned or is flagged for adjustment. Common values
+      include 'R' (returned), 'A' (accepted), and 'N' (not returned).
   - name: linestatus
-    description: Categorical field — linestatus.
+    description: Fulfillment status of the line item relative to the ship date. 'O' indicates the item is still open/outstanding;
+      'F' indicates it has been fully shipped.
   - name: shipdate
-    description: Date/timestamp for shipdate. Cast to date.
+    description: Date the line item was physically shipped from the supplier to the customer.
     tests:
     - not_null
   - name: commitdate
-    description: Date/timestamp for commitdate. Cast to date.
+    description: Date the supplier committed to having the line item ready for shipment.
     tests:
     - not_null
   - name: receiptdate
-    description: Date/timestamp for receiptdate. Cast to date.
+    description: Date the customer received the shipped line item, used to measure actual delivery lead time.
     tests:
     - not_null
   - name: shipinstruct
-    description: Shipinstruct.
+    description: Delivery instruction provided for this line item specifying how the shipment should be handled at destination
+      (e.g., 'DELIVER IN PERSON', 'COLLECT COD').
   - name: shipmode
-    description: Categorical field — shipmode.
+    description: Mode of transport used to ship this line item (e.g., 'AIR', 'RAIL', 'TRUCK', 'MAIL'). Used in shipping cost
+      and lead time analyses.
   - name: comment
-    description: Free-text comment field. Not used in analytics.
+    description: Free-text internal comment recorded against the line item at the source. Not used in analytics.
 - name: stg_tpch__nation
-  description: Staged and renamed records from TPCH.NATION. One row per nation. Renamed
-    columns to snake_case business names. Enrich this description with business context.
+  description: Staged and renamed records from TPCH.NATION. One row per nation. Renamed columns to snake_case business names.
+    Enrich this description with business context.
   config:
     tags:
     - platform
@@ -119,20 +128,22 @@ models:
       access: public
   columns:
   - name: nationkey
-    description: Foreign key reference.
+    description: Foreign key to the nation in the TPC-H nations reference table; the original integer identifier assigned
+      to each nation in the source system.
     tests:
     - not_null
   - name: name
-    description: Name.
+    description: Standard English name of the nation (e.g., 'UNITED STATES', 'FRANCE'). PII — mask in public marts.
   - name: regionkey
-    description: Foreign key reference.
+    description: Foreign key to the geographic region that this nation belongs to, linking to the regions reference table.
     tests:
     - not_null
   - name: comment
-    description: Free-text comment field. Not used in analytics.
+    description: Free-text annotation sourced from the TPC-H benchmark dataset. Not used in analytics and should be excluded
+      from downstream models.
 - name: stg_tpch__orders
-  description: Staged and renamed records from TPCH.ORDERS. One row per orders. Renamed
-    columns to snake_case business names. Enrich this description with business context.
+  description: Staged and renamed records from TPCH.ORDERS. One row per orders. Renamed columns to snake_case business names.
+    Enrich this description with business context.
   config:
     tags:
     - platform
@@ -144,36 +155,39 @@ models:
       access: public
   columns:
   - name: orderkey
-    description: Foreign key reference.
+    description: Foreign key to the orders table; the natural integer key assigned to each order in the TPC-H source system.
     tests:
     - not_null
   - name: custkey
-    description: Foreign key reference.
+    description: Foreign key to the customer who placed the order.
     tests:
     - not_null
   - name: orderstatus
-    description: Categorical field — orderstatus.
+    description: 'Single-character code reflecting the fulfillment state of the order: ''O'' for open, ''F'' for fully fulfilled,
+      and ''P'' for partially fulfilled.'
   - name: totalprice
-    description: Monetary value for totalprice.
+    description: Total monetary value of the order in USD, aggregating all line item extended prices after discounts and before
+      taxes.
     tests:
     - not_null
   - name: orderdate
-    description: Date/timestamp for orderdate. Cast to date.
+    description: Date on which the customer placed the order, cast from a source timestamp to a plain date.
     tests:
     - not_null
   - name: orderpriority
-    description: Orderpriority.
+    description: Categorical label ranking the business urgency of the order, ranging from '1-URGENT' to '5-LOW'.
   - name: clerk
-    description: Clerk.
+    description: Identifier of the clerk or sales representative responsible for processing and recording the order.
   - name: shippriority
-    description: Shippriority.
+    description: Numeric ranking that determines fulfillment sequencing for the order; higher values indicate greater shipping
+      urgency.
     tests:
     - not_null
   - name: comment
-    description: Free-text comment field. Not used in analytics.
+    description: Free-text notes attached to the order in the source system. Not used in analytics.
 - name: stg_tpch__part
-  description: Staged and renamed records from TPCH.PART. One row per part. Renamed
-    columns to snake_case business names. Enrich this description with business context.
+  description: Staged and renamed records from TPCH.PART. One row per part. Renamed columns to snake_case business names.
+    Enrich this description with business context.
   config:
     tags:
     - platform
@@ -185,34 +199,36 @@ models:
       access: public
   columns:
   - name: partkey
-    description: Foreign key reference.
+    description: Foreign key to the part entity; the original integer part identifier from the TPC-H source system.
     tests:
     - not_null
     - unique
   - name: name
-    description: Name.
+    description: Unique descriptive name assigned to the part, composed of random word combinations used to distinguish individual
+      parts. PII — mask in public marts.
   - name: mfgr
-    description: Mfgr.
+    description: Manufacturer that produces the part, encoded as one of five manufacturer labels (e.g., Manufacturer#1).
   - name: brand
-    description: Brand.
+    description: Brand designation of the part within its manufacturer, used to group parts by product line (e.g., Brand#13).
   - name: type
-    description: Categorical field — type.
+    description: Categorical classification of the part describing its material and finish (e.g., SMALL BRUSHED COPPER); used
+      for product segmentation and filtering.
   - name: size
-    description: Size.
+    description: Numeric measurement indicating the relative size of the part, ranging from 1 to 50.
     tests:
     - not_null
   - name: container
-    description: Container.
+    description: Packaging type used to ship the part, combining a size category and container form (e.g., SM BOX, LG DRUM);
+      drives shipping and logistics logic.
   - name: retailprice
-    description: Monetary value for retailprice.
+    description: Suggested retail price of the part in USD, derived from the TPC-H pricing formula based on part key.
     tests:
     - not_null
   - name: comment
-    description: Free-text comment field. Not used in analytics.
+    description: Free-text notes from the source system with no standardized structure. Not used in analytics.
 - name: stg_tpch__partsupp
-  description: Staged and renamed records from TPCH.PARTSUPP. One row per partsupp.
-    Renamed columns to snake_case business names. Enrich this description with business
-    context.
+  description: Staged and renamed records from TPCH.PARTSUPP. One row per partsupp. Renamed columns to snake_case business
+    names. Enrich this description with business context.
   config:
     tags:
     - platform
@@ -224,26 +240,27 @@ models:
       access: public
   columns:
   - name: partkey
-    description: Foreign key reference.
+    description: Foreign key to the part being supplied, linking this record to the part dimension.
     tests:
     - not_null
   - name: suppkey
-    description: Foreign key reference.
+    description: Foreign key to the supplier fulfilling this part, linking this record to the supplier dimension.
     tests:
     - not_null
   - name: availqty
-    description: Availqty.
+    description: The number of units of this part currently held in stock by the supplier and available for order.
     tests:
     - not_null
   - name: supplycost
-    description: Monetary value for supplycost.
+    description: The cost (in USD) charged by the supplier to provide one unit of the associated part; used in procurement
+      cost analysis.
     tests:
     - not_null
   - name: comment
-    description: Free-text comment field. Not used in analytics.
+    description: Free-text notes associated with the part-supplier relationship. Not used in analytics.
 - name: stg_tpch__region
-  description: Staged and renamed records from TPCH.REGION. One row per region. Renamed
-    columns to snake_case business names. Enrich this description with business context.
+  description: Staged and renamed records from TPCH.REGION. One row per region. Renamed columns to snake_case business names.
+    Enrich this description with business context.
   config:
     tags:
     - platform
@@ -255,18 +272,19 @@ models:
       access: public
   columns:
   - name: regionkey
-    description: Foreign key reference.
+    description: Foreign key to the region in the raw TPC-H source; the native integer identifier assigned to each geographic
+      region in the benchmark dataset.
     tests:
     - not_null
     - unique
   - name: name
-    description: Name.
+    description: Broad geographic region label (e.g., AFRICA, EUROPE, ASIA) used to group nations and suppliers for supply
+      chain reporting.
   - name: comment
-    description: Free-text comment field. Not used in analytics.
+    description: Free-text annotation from the TPC-H source data. Not used in analytics and excluded from downstream models.
 - name: stg_tpch__supplier
-  description: Staged and renamed records from TPCH.SUPPLIER. One row per supplier.
-    Renamed columns to snake_case business names. Enrich this description with business
-    context.
+  description: Staged and renamed records from TPCH.SUPPLIER. One row per supplier. Renamed columns to snake_case business
+    names. Enrich this description with business context.
   config:
     tags:
     - platform
@@ -278,23 +296,26 @@ models:
       access: public
   columns:
   - name: suppkey
-    description: Foreign key reference.
+    description: Foreign key to the supplier dimension; the raw numeric identifier assigned to each supplier in the TPC-H
+      source system.
     tests:
     - not_null
     - unique
   - name: name
-    description: Name.
+    description: Registered business name of the supplier. PII — mask in public marts.
   - name: address
-    description: Address.
+    description: Street-level mailing address of the supplier. PII — mask in public marts.
   - name: nationkey
-    description: Foreign key reference.
+    description: Foreign key to the nation dimension, indicating the country where the supplier is registered.
     tests:
     - not_null
   - name: phone
-    description: Phone.
+    description: Primary contact phone number for the supplier. PII — mask in public marts.
   - name: acctbal
-    description: Acctbal.
+    description: Supplier's current account balance in the benchmark currency; positive values indicate credit owed to the
+      supplier, negative values indicate an outstanding balance.
     tests:
     - not_null
   - name: comment
-    description: Free-text comment field. Not used in analytics.
+    description: Free-text notes from the source system about the supplier. Not used in analytics and may contain inconsistent
+      or legacy data.
