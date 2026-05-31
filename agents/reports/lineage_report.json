@@ -1,0 +1,75 @@
+{
+  "project": "dbt_platform",
+  "generated_at": "2026-05-31T17:01:52.992826+00:00",
+  "summary": {
+    "total_models": 8,
+    "tested_models": 8,
+    "total_tests": 80,
+    "error_count": 0,
+    "warn_count": 0
+  },
+  "risks": {
+    "orphaned_sources": [],
+    "untested_models": [],
+    "high_blast_radius": [],
+    "missing_descriptions": []
+  },
+  "models": {
+    "model.dbt_platform.stg_tpch__region": {
+      "name": "stg_tpch__region",
+      "path": "models/staging/tpch/stg_tpch__region.sql",
+      "description": "Staged and renamed records from TPCH.REGION. One row per region. Renamed columns to snake_case business names. Enrich this description with business context.",
+      "test_count": 5,
+      "downstream_count": 0
+    },
+    "model.dbt_platform.stg_tpch__nation": {
+      "name": "stg_tpch__nation",
+      "path": "models/staging/tpch/stg_tpch__nation.sql",
+      "description": "Staged and renamed records from TPCH.NATION. One row per nation. Renamed columns to snake_case business names. Enrich this description with business context.",
+      "test_count": 4,
+      "downstream_count": 0
+    },
+    "model.dbt_platform.stg_tpch__part": {
+      "name": "stg_tpch__part",
+      "path": "models/staging/tpch/stg_tpch__part.sql",
+      "description": "Staged and renamed records from TPCH.PART. One row per part. Renamed columns to snake_case business names. Enrich this description with business context.",
+      "test_count": 12,
+      "downstream_count": 0
+    },
+    "model.dbt_platform.stg_tpch__partsupp": {
+      "name": "stg_tpch__partsupp",
+      "path": "models/staging/tpch/stg_tpch__partsupp.sql",
+      "description": "Staged and renamed records from TPCH.PARTSUPP. One row per partsupp. Renamed columns to snake_case business names. Enrich this description with business context.",
+      "test_count": 6,
+      "downstream_count": 0
+    },
+    "model.dbt_platform.stg_tpch__customer": {
+      "name": "stg_tpch__customer",
+      "path": "models/staging/tpch/stg_tpch__customer.sql",
+      "description": "Staged and renamed records from TPCH.CUSTOMER. One row per customer. Renamed columns to snake_case business names. Enrich this description with business context.",
+      "test_count": 10,
+      "downstream_count": 0
+    },
+    "model.dbt_platform.stg_tpch__supplier": {
+      "name": "stg_tpch__supplier",
+      "path": "models/staging/tpch/stg_tpch__supplier.sql",
+      "description": "Staged and renamed records from TPCH.SUPPLIER. One row per supplier. Renamed columns to snake_case business names. Enrich this description with business context.",
+      "test_count": 9,
+      "downstream_count": 0
+    },
+    "model.dbt_platform.stg_tpch__lineitem": {
+      "name": "stg_tpch__lineitem",
+      "path": "models/staging/tpch/stg_tpch__lineitem.sql",
+      "description": "Staged and renamed records from TPCH.LINEITEM. One row per lineitem. Renamed columns to snake_case business names. Enrich this description with business context.",
+      "test_count": 23,
+      "downstream_count": 0
+    },
+    "model.dbt_platform.stg_tpch__orders": {
+      "name": "stg_tpch__orders",
+      "path": "models/staging/tpch/stg_tpch__orders.sql",
+      "description": "Staged and renamed records from TPCH.ORDERS. One row per orders. Renamed columns to snake_case business names. Enrich this description with business context.",
+      "test_count": 11,
+      "downstream_count": 0
+    }
+  }
+}
