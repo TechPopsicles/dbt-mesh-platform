@@ -14,7 +14,7 @@ built to accompany the Medium blog series:
 |---|---|---|
 | 1 | [Scaffolding a Production dbt Project in 60 Seconds with AI](https://kiran-pothina.medium.com/scaffolding-a-production-dbt-project-in-60-seconds-with-ai-ad4c43fced4e) | ✅ Published |
 | 2 | [Four AI Agents That Keep Your dbt Project Honest](https://kiran-pothina.medium.com/four-ai-agents-that-keep-your-dbt-project-honest-f6bccf5cd465) | ✅ Published |
-| 3 | Scaling dbt Across Teams — Mesh, Contracts and Versioning | 🔜 Coming soon |
+| 3 | [Scaling dbt Across Teams — Mesh, Contracts and Versioning](https://medium.com/@kiran-pothina/scaling-dbt-across-teams-mesh-contracts-and-versioning-9177bd22e038) | ✅ Published |
 | 4 | One Truth, Five Teams — Governing the dbt Semantic Layer | 🔜 Coming soon |
 | 5 | Ship Fast, Break Nothing — CI/CD, Monitoring and Model Health | 🔜 Coming soon |
 
