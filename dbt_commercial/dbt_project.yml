@@ -1,0 +1,65 @@
+name: dbt_commercial
+version: "1.0.0"
+config-version: 2
+require-dbt-version: [">=1.11.0", "<2.0.0"]
+
+profile: commercial
+
+# ── Path configuration ───────────────────────────────────────────────────────
+model-paths:    ["models"]
+test-paths:     ["tests"]
+macro-paths:    ["macros"]
+seed-paths:     ["seeds"]
+snapshot-paths: ["snapshots"]
+analysis-paths: ["analyses"]
+docs-paths:     ["docs"]
+
+target-path:   "target"
+clean-targets: ["target", "dbt_packages"]
+
+# ── Model configuration by folder ───────────────────────────────────────────
+# Grants are defined here at folder level and overridden per model in YAML.
+# Behaviour: model-level grants REPLACE folder-level grants (most specific wins).
+#
+# Access matrix:
+#   staging/intermediate → no grants (private, Snowflake schema not exposed)
+#   marts (all)          → ANALYTICS_DEV_ROLE (read all public contracts)
+#   fct_orders_v1        → FINANCE_DEV_ROLE + ANALYTICS_DEV_ROLE
+#   dim_customers_v1     → MARKETING_DEV_ROLE + ANALYTICS_DEV_ROLE
+models:
+  dbt_commercial:
+
+    staging:
+      +materialized: view
+      +schema: staging
+      +tags: ["commercial", "staging"]
+
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+      +tags: ["commercial", "intermediate"]
+
+    marts:
+      +materialized: table
+      +access: public
+      +schema: marts
+      +tags: ["commercial", "marts"]
+      +grants:
+        select: ['ANALYTICS_DEV_ROLE']    # baseline — all marts readable by analytics
+
+      sales:
+        +tags: ["commercial", "marts", "sales"]
+        +contract:
+          enforced: true
+
+      crm:
+        +tags: ["commercial", "marts", "crm"]
+        +contract:
+          enforced: true
+
+# ── Test configuration ───────────────────────────────────────────────────────
+tests:
+  dbt_commercial:
+    +severity: error
+    +store_failures: true
+    +schema: test_failures

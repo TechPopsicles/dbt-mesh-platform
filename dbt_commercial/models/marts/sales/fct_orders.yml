@@ -1,0 +1,164 @@
+version: 2
+
+models:
+
+  # ===========================================================================
+  # fct_orders — versioned public contract
+  # ===========================================================================
+  # latest_version: 1   (v2 created when breaking change needed)
+  # Consumers ref() this as: ref('fct_orders') or ref('fct_orders', v=1)
+  # Breaking change protocol:
+  #   1. Create fct_orders_v2.sql with the new schema
+  #   2. Set latest_version: 2
+  #   3. Set deprecation_date on v1 (30 days out)
+  #   4. Notify consumers via PR comment
+  # ===========================================================================
+
+  - name: fct_orders
+    description: >
+      One row per customer order. The primary commercial fact table.
+      Aggregates line-item revenue to the order level. Published as a
+      public contract — consumers in dbt_finance and dbt_analytics
+      ref() this model. Breaking changes require a version bump.
+    latest_version: 1
+
+    config:
+      tags: ["commercial", "marts", "sales", "public"]
+      grants:
+        select: ['FINANCE_DEV_ROLE', 'ANALYTICS_DEV_ROLE']
+      meta:
+        owner:      commercial-team@techminionacademy.com
+        domain:     commercial
+        sub_domain: sales
+        sla:        daily
+        consumers:  ["dbt_finance", "dbt_analytics"]
+
+    versions:
+      - v: 1
+        defined_in: fct_orders_v1
+
+    columns:
+      - name: order_key
+        description: >
+          Surrogate primary key for the order. Natural key from the TPC-H
+          source system. Unique across all orders.
+        data_type: number(38,0)
+        constraints:
+          - type: not_null
+          - type: primary_key
+            warn_unenforced: false
+        data_tests:
+          - not_null
+          - unique
+
+      - name: customer_key
+        description: >
+          Foreign key to dim_customers. Links each order to the customer
+          who placed it. Used for customer-level revenue aggregation.
+        data_type: number(38,0)
+        constraints:
+          - type: not_null
+          - type: foreign_key
+            warn_unenforced: false
+            to: ref('dim_customers')
+            to_columns: [customer_key]
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_key
+
+      - name: order_date
+        description: >
+          Date the customer placed the order. Cast to DATE from source.
+          Used as the primary time dimension for revenue trending.
+        data_type: date
+        constraints:
+          - type: not_null
+        data_tests:
+          - not_null
+
+      - name: order_status
+        description: "Raw order status code: F = Fulfilled, O = Open, P = Partial."
+        data_type: varchar
+        constraints:
+          - type: not_null
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['F', 'O', 'P']
+
+      - name: order_status_label
+        description: Human-readable status derived from order_status code.
+        data_type: varchar
+        constraints:
+          - type: not_null
+
+      - name: order_priority
+        description: Priority code assigned to the order at creation.
+        data_type: varchar
+        constraints:
+          - type: not_null
+
+      - name: is_high_priority
+        description: True if order priority is 1-URGENT or 2-HIGH.
+        data_type: boolean
+        constraints:
+          - type: not_null
+
+      - name: gross_revenue
+        description: >
+          Total order value including tax, aggregated from all line items.
+          Computed as sum(gross_price) across line items.
+          Used by Finance for CAC calculations and revenue reporting.
+        data_type: number(18,2)
+        constraints:
+          - type: not_null
+
+      - name: net_revenue
+        description: >
+          Total order value after discounts but before tax.
+          Computed as sum(net_price) across line items.
+        data_type: number(18,2)
+        constraints:
+          - type: not_null
+
+      - name: extended_revenue
+        description: Gross price before discounts, summed across line items.
+        data_type: number(18,2)
+        constraints:
+          - type: not_null
+
+      - name: total_quantity
+        description: Total units ordered across all line items on this order.
+        data_type: number(38,0)
+        constraints:
+          - type: not_null
+
+      - name: line_item_count
+        description: Number of distinct line items on this order.
+        data_type: number(38,0)
+        constraints:
+          - type: not_null
+
+      - name: avg_discount_rate
+        description: Average discount rate across all line items on this order.
+        data_type: number(18,2)
+
+      - name: first_ship_date
+        description: Earliest ship date across all line items on this order.
+        data_type: date
+
+      - name: last_receipt_date
+        description: Latest receipt date across all line items on this order.
+        data_type: date
+
+      - name: returned_lines
+        description: Count of line items with return_flag = R on this order.
+        data_type: number(38,0)
+
+      - name: late_lines
+        description: Count of line items delivered after the commit date.
+        data_type: number(38,0)

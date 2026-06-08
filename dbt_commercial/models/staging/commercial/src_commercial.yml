@@ -1,0 +1,187 @@
+version: 2
+
+# =============================================================================
+# dbt_commercial · Source definitions
+# =============================================================================
+# Commercial reads from Platform staging views — not raw Snowflake sample data.
+# This is the dbt Mesh boundary: commercial never touches SNOWFLAKE_SAMPLE_DATA.
+# Platform is the data contract owner for all raw source transformations.
+#
+# Database + schema resolved from environment:
+#   Dev  → PLATFORM_DEV.{DBT_USER_SCHEMA}_STAGING  e.g. PLATFORM_DEV.KIRAN_STAGING
+#   Prod → PLATFORM_PROD.STAGING
+#
+# The env_var() calls mirror profiles.yml so the same YAML works across targets.
+# =============================================================================
+
+sources:
+  - name: platform
+    description: >
+      Platform team staging views. The authoritative source for all raw TPC-H
+      data consumed by the commercial domain. Commercial never queries
+      SNOWFLAKE_SAMPLE_DATA directly — always via these platform views.
+    database: "{{ env_var('PLATFORM_DATABASE', 'PLATFORM_DEV') }}"
+    schema:   "{{ env_var('PLATFORM_SCHEMA',   'KIRAN_STAGING') }}"
+    config:
+      meta:
+        owner:        platform-team@techminionacademy.com
+        domain:       platform
+        contract_tier: public
+
+    tables:
+      - name: stg_tpch__orders
+        description: >
+          Cleaned and renamed order header records from TPC-H.
+          One row per customer order. Grain: order_key.
+        config:
+          meta:
+            grain: order_key
+        columns:
+          - name: orderkey
+            description: Surrogate primary key for the order.
+            data_tests:
+              - not_null
+              - unique
+          - name: custkey
+            description: Foreign key to the customer who placed the order.
+            data_tests:
+              - not_null
+          - name: orderstatus
+            description: "Order status: F = Fulfilled, O = Open, P = Partial."
+            data_tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['F', 'O', 'P']
+          - name: totalprice
+            description: Total price of the order before adjustments.
+            data_tests:
+              - not_null
+          - name: orderdate
+            description: Date the customer placed the order.
+            data_tests:
+              - not_null
+          - name: orderpriority
+            description: Priority ranking of the order.
+          - name: clerk
+            description: Identifier of the clerk who processed the order.
+          - name: shippriority
+            description: Shipping priority flag.
+          - name: comment
+            description: Free-text comment. Not used in analytics.
+
+      - name: stg_tpch__customer
+        description: >
+          Cleaned customer records from TPC-H.
+          One row per customer. Grain: custkey.
+          Contains PII columns — do not expose in public marts.
+        config:
+          meta:
+            grain: custkey
+            pii: true
+        columns:
+          - name: custkey
+            description: Surrogate primary key for the customer.
+            data_tests:
+              - not_null
+              - unique
+          - name: name
+            description: Customer name. PII — exclude from public marts.
+            config:
+              meta:
+                pii: true
+          - name: address
+            description: Customer address. PII.
+            config:
+              meta:
+                pii: true
+          - name: nationkey
+            description: Foreign key to the nation.
+            data_tests:
+              - not_null
+          - name: phone
+            description: Customer phone number. PII.
+            config:
+              meta:
+                pii: true
+          - name: acctbal
+            description: Customer account balance.
+            data_tests:
+              - not_null
+          - name: mktsegment
+            description: Market segment classification.
+            data_tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['AUTOMOBILE', 'BUILDING', 'FURNITURE',
+                             'HOUSEHOLD', 'MACHINERY']
+          - name: comment
+            description: Free-text comment. Not used in analytics.
+
+      - name: stg_tpch__lineitem
+        description: >
+          Cleaned line item records from TPC-H.
+          One row per (order, line number). Grain: orderkey + linenumber.
+          The finest grain — used for revenue line-level analysis.
+        config:
+          meta:
+            grain: "orderkey + linenumber"
+        columns:
+          - name: orderkey
+            description: Foreign key to the parent order.
+            data_tests:
+              - not_null
+          - name: linenumber
+            description: Position of this line within the order.
+            data_tests:
+              - not_null
+          - name: quantity
+            description: Quantity of parts on this line.
+            data_tests:
+              - not_null
+          - name: extendedprice
+            description: Gross price before discount.
+            data_tests:
+              - not_null
+          - name: discount
+            description: Discount rate applied. Range 0.00–0.10.
+            data_tests:
+              - not_null
+          - name: tax
+            description: Tax rate applied after discount.
+            data_tests:
+              - not_null
+          - name: returnflag
+            description: "Return flag: R = Returned, A = Accepted, N = None."
+            data_tests:
+              - not_null
+          - name: linestatus
+            description: "Line status: O = Open, F = Fulfilled."
+            data_tests:
+              - not_null
+          - name: shipdate
+            description: Date the line item was shipped.
+          - name: commitdate
+            description: Committed delivery date.
+          - name: receiptdate
+            description: Date the customer received the shipment.
+          - name: shipmode
+            description: "Shipping mode (AIR, MAIL, SHIP, TRUCK, etc.)."
+
+      - name: stg_tpch__nation
+        description: "Reference table of 25 nations. Grain: nationkey."
+        columns:
+          - name: nationkey
+            description: Primary key for the nation.
+            data_tests:
+              - not_null
+              - unique
+          - name: name
+            description: Nation name.
+            data_tests:
+              - not_null
+          - name: regionkey
+            description: Foreign key to the region.
+            data_tests:
+              - not_null

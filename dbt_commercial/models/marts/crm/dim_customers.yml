@@ -1,0 +1,155 @@
+version: 2
+
+models:
+
+  # ===========================================================================
+  # dim_customers — versioned public contract
+  # ===========================================================================
+  # PII columns intentionally excluded — name, address, phone stay private.
+  # latest_version: 1
+  # ===========================================================================
+
+  - name: dim_customers
+    description: >
+      One row per customer. The primary commercial dimension table.
+      Enriches customer attributes with behavioural metrics from order history.
+      PII columns (name, address, phone) are excluded — this is a public
+      contract readable by Marketing and Analytics teams.
+    latest_version: 1
+
+    config:
+      tags: ["commercial", "marts", "crm", "public"]
+      grants:
+        select: ['MARKETING_DEV_ROLE', 'ANALYTICS_DEV_ROLE']
+      meta:
+        owner:      commercial-team@techminionacademy.com
+        domain:     commercial
+        sub_domain: crm
+        sla:        daily
+        consumers:  ["dbt_marketing", "dbt_analytics"]
+        pii:        false
+
+    versions:
+      - v: 1
+        defined_in: dim_customers_v1
+
+    columns:
+      - name: customer_key
+        description: >
+          Surrogate primary key for the customer. Natural key from TPC-H.
+          Unique across all customers.
+        data_type: number(38,0)
+        constraints:
+          - type: not_null
+          - type: primary_key
+            warn_unenforced: false
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nation_key
+        description: Foreign key to the nation dimension. Used for geographic segmentation.
+        data_type: number(38,0)
+        constraints:
+          - type: not_null
+        data_tests:
+          - not_null
+
+      - name: market_segment
+        description: >
+          Industry segment the customer belongs to. One of: AUTOMOBILE, BUILDING,
+          FURNITURE, HOUSEHOLD, MACHINERY. Primary segmentation dimension for
+          marketing campaign targeting.
+        data_type: varchar
+        constraints:
+          - type: not_null
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['AUTOMOBILE', 'BUILDING', 'FURNITURE',
+                         'HOUSEHOLD', 'MACHINERY']
+
+      - name: account_balance
+        description: >
+          Customer account balance in USD. Negative values indicate outstanding
+          debt. Used for credit risk assessment and is_delinquent flag derivation.
+        data_type: number(18,2)
+        constraints:
+          - type: not_null
+
+      - name: is_delinquent
+        description: True if account_balance is negative. Used for credit risk filtering.
+        data_type: boolean
+        constraints:
+          - type: not_null
+        data_tests:
+          - not_null
+
+      - name: is_high_value
+        description: True if account_balance >= 5000. Used for premium segment targeting.
+        data_type: boolean
+        constraints:
+          - type: not_null
+
+      - name: total_orders
+        description: Total number of orders placed by this customer across all time.
+        data_type: number(38,0)
+        constraints:
+          - type: not_null
+
+      - name: lifetime_gross_revenue
+        description: >
+          Sum of gross_price across all line items on all orders for this customer.
+          Includes tax. The primary lifetime value measure for this customer.
+        data_type: number(18,2)
+        constraints:
+          - type: not_null
+
+      - name: lifetime_net_revenue
+        description: Sum of net_price (after discount, before tax) across all orders.
+        data_type: number(18,2)
+        constraints:
+          - type: not_null
+
+      - name: first_order_date
+        description: Date of the customer's first ever order. Null if no orders placed.
+        data_type: date
+
+      - name: last_order_date
+        description: Date of the customer's most recent order. Null if no orders placed.
+        data_type: date
+
+      - name: customer_tenure_days
+        description: >
+          Days between first and last order date. Zero for single-order customers.
+          Used in cohort analysis and retention modelling.
+        data_type: number(38,0)
+        constraints:
+          - type: not_null
+
+      - name: total_returns
+        description: Count of returned line items across all orders for this customer.
+        data_type: number(38,0)
+        constraints:
+          - type: not_null
+
+      - name: customer_tier
+        description: >
+          Derived customer value tier based on lifetime_gross_revenue:
+          platinum (>= 500K), gold (>= 100K), silver (>= 10K), bronze (< 10K).
+          Used for priority routing and campaign segmentation.
+        data_type: varchar
+        constraints:
+          - type: not_null
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['platinum', 'gold', 'silver', 'bronze']
+
+      - name: is_never_ordered
+        description: True if the customer has no order history. Useful for churn analysis.
+        data_type: boolean
+        constraints:
+          - type: not_null

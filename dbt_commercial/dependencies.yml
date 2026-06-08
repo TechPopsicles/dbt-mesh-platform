@@ -1,0 +1,6 @@
+projects:
+  - name: dbt_platform
+    # dbt_commercial reads from PLATFORM_DEV/PROD staging schemas via source()
+    # The platform staging views are the contract boundary between projects.
+    # In dbt Core: uses source() pointing at Snowflake directly.
+    # In dbt Cloud Mesh: would use cross-project ref() via catalog.

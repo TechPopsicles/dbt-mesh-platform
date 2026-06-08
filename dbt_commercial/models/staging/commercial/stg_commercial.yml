@@ -1,0 +1,204 @@
+version: 2
+
+models:
+
+  - name: stg_commercial__orders
+    description: >
+      Enriched order records sourced from Platform staging. Adds business-friendly
+      status labels and priority flags. One row per order. Grain: order_key.
+      Entry point for all order-level analysis in the commercial domain.
+    config:
+      tags: ["commercial", "staging", "orders"]
+      contract:
+        enforced: false
+      meta:
+        owner: commercial-team@techminionacademy.com
+        grain: order_key
+        access: private
+    columns:
+      - name: order_key
+        description: Surrogate primary key for the order.
+        data_type: number
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_key
+        description: Foreign key to the customer who placed this order.
+        data_type: number
+        data_tests:
+          - not_null
+      - name: order_status
+        description: "Raw order status code: F = Fulfilled, O = Open, P = Partial."
+        data_type: varchar
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['F', 'O', 'P']
+      - name: order_priority
+        description: Priority code assigned at order creation time.
+        data_type: varchar
+        data_tests:
+          - not_null
+      - name: order_total_price
+        description: Total monetary value of the order before adjustments.
+        data_type: number
+        data_tests:
+          - not_null
+      - name: order_date
+        description: Date the customer placed the order. Cast to DATE.
+        data_type: date
+        data_tests:
+          - not_null
+      - name: is_high_priority
+        description: True if order priority is 1-URGENT or 2-HIGH.
+        data_type: boolean
+        data_tests:
+          - not_null
+      - name: order_status_label
+        description: Human-readable order status derived from status code.
+        data_type: varchar
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['fulfilled', 'open', 'partial', 'unknown']
+
+  - name: stg_commercial__customers
+    description: >
+      Enriched customer records sourced from Platform staging. Adds high-value
+      and delinquency flags. Contains PII columns — never exposed in public marts.
+      One row per customer. Grain: customer_key.
+    config:
+      tags: ["commercial", "staging", "customers", "pii"]
+      contract:
+        enforced: false
+      meta:
+        owner: commercial-team@techminionacademy.com
+        grain: customer_key
+        access: private
+        pii: true
+    columns:
+      - name: customer_key
+        description: Surrogate primary key for the customer.
+        data_type: number
+        data_tests:
+          - not_null
+          - unique
+      - name: nation_key
+        description: Foreign key to the nation the customer belongs to.
+        data_type: number
+        data_tests:
+          - not_null
+      - name: customer_name
+        description: Customer display name. PII — excluded from public marts.
+        data_type: varchar
+        config:
+          meta:
+            pii: true
+      - name: customer_address
+        description: Customer mailing address. PII.
+        data_type: varchar
+        config:
+          meta:
+            pii: true
+      - name: customer_phone
+        description: Customer contact phone number. PII.
+        data_type: varchar
+        config:
+          meta:
+            pii: true
+      - name: market_segment
+        description: Market segment classification for the customer.
+        data_type: varchar
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['AUTOMOBILE', 'BUILDING', 'FURNITURE',
+                         'HOUSEHOLD', 'MACHINERY']
+      - name: account_balance
+        description: Customer account balance. Negative values indicate outstanding debt.
+        data_type: number
+        data_tests:
+          - not_null
+      - name: is_delinquent
+        description: True if account balance is negative.
+        data_type: boolean
+        data_tests:
+          - not_null
+      - name: is_high_value
+        description: True if account balance >= 5000. Used for premium segment targeting.
+        data_type: boolean
+        data_tests:
+          - not_null
+
+  - name: stg_commercial__lineitems
+    description: >
+      Enriched line item records sourced from Platform staging. Adds derived
+      revenue measures (net_price, gross_price). One row per (order, line number).
+      Grain: lineitem_key (surrogate from orderkey + linenumber).
+    config:
+      tags: ["commercial", "staging", "lineitems"]
+      contract:
+        enforced: false
+      meta:
+        owner: commercial-team@techminionacademy.com
+        grain: "order_key + line_number"
+        access: private
+    columns:
+      - name: lineitem_key
+        description: Surrogate key generated from order_key + line_number.
+        data_type: varchar
+        data_tests:
+          - not_null
+          - unique
+      - name: order_key
+        description: Foreign key to the parent order.
+        data_type: number
+        data_tests:
+          - not_null
+      - name: line_number
+        description: Sequential position of this line item within the order.
+        data_type: number
+        data_tests:
+          - not_null
+      - name: extended_price
+        description: Gross price before discount (quantity × part price).
+        data_type: number
+        data_tests:
+          - not_null
+      - name: discount_rate
+        description: Discount rate applied to this line. Range 0.00–0.10.
+        data_type: number
+        data_tests:
+          - not_null
+      - name: net_price
+        description: Extended price after discount. Derived as extended_price × (1 − discount_rate).
+        data_type: number
+        data_tests:
+          - not_null
+      - name: gross_price
+        description: Net price after tax. Derived as net_price × (1 + tax_rate).
+        data_type: number
+        data_tests:
+          - not_null
+      - name: ship_date
+        description: Date the line item was shipped from the supplier.
+        data_type: date
+      - name: return_flag
+        description: "Return status: R = Returned, A = Accepted, N = None."
+        data_type: varchar
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['R', 'A', 'N']
+      - name: line_status
+        description: "Line status: O = Open, F = Fulfilled."
+        data_type: varchar
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['O', 'F']
