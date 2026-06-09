@@ -1,0 +1,33 @@
+name: dbt_product
+version: "1.0.0"
+config-version: 2
+require-dbt-version: [">=1.11.0", "<2.0.0"]
+
+profile: product
+
+model-paths:    ["models"]
+macro-paths:    ["macros"]
+target-path:    "target"
+clean-targets:  ["target", "dbt_packages"]
+
+models:
+  dbt_product:
+    staging:
+      +materialized: view
+      +schema: staging
+      +tags: ["product", "staging"]
+    marts:
+      +materialized: table
+      +access: public
+      +schema: marts
+      +tags: ["product", "marts"]
+      +contract:
+        enforced: true
+      +grants:
+        select: ['ANALYTICS_DEV_ROLE']
+
+tests:
+  dbt_product:
+    +severity: error
+    +store_failures: true
+    +schema: test_failures

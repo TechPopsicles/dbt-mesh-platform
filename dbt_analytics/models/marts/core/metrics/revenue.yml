@@ -1,0 +1,61 @@
+version: 2
+
+metrics:
+
+  - name: gross_revenue
+    label: Gross Revenue
+    description: >
+      Total order value including tax. THE authoritative revenue number.
+      Used in executive dashboards, board reporting, and Finance ARR calculations.
+      Source: Commercial fct_orders_v1 via fct_orders_enriched.
+      Owner: Analytics team (definition) · Commercial team (source data).
+    type: simple
+    type_params:
+      measure: gross_revenue_amount
+
+  - name: net_revenue
+    label: Net Revenue
+    description: >
+      Total order value after discounts, before tax.
+      Used for margin analysis. NOT the same as gross_revenue.
+      Owner: Analytics team.
+    type: simple
+    type_params:
+      measure: net_revenue_amount
+
+  - name: total_discount
+    label: Total Discount Given
+    description: >
+      Absolute discount amount (gross - net).
+      Owner: Analytics team.
+    type: simple
+    type_params:
+      measure: discount_amount
+
+  - name: order_count
+    label: Order Count
+    description: Count of distinct orders placed.
+    type: simple
+    type_params:
+      measure: order_count
+
+  - name: avg_order_value
+    label: Average Order Value
+    description: >
+      Average gross revenue per order. Slice by market_segment
+      or customer_tier for segment-level AOV.
+      Owner: Analytics team.
+    type: simple
+    type_params:
+      measure: avg_order_value
+
+  - name: discount_rate
+    label: Effective Discount Rate
+    description: >
+      Ratio of total discount to gross revenue.
+      Flag when > 10% in any segment.
+      Owner: Finance team (governance) · Analytics team (definition).
+    type: ratio
+    type_params:
+      numerator: total_discount
+      denominator: gross_revenue

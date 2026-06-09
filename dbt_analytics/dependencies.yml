@@ -1,0 +1,6 @@
+projects:
+  - name: dbt_platform
+  - name: dbt_commercial
+  - name: dbt_finance
+  - name: dbt_product
+  - name: dbt_marketing

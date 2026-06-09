@@ -1,0 +1,59 @@
+version: 2
+
+models:
+  - name: fct_usage
+    description: >
+      Monthly product feature usage aggregation. TPC-H lineitem as proxy
+      for real event stream data. One row per feature + month.
+      Consumed by dbt_analytics for cross-domain engagement metrics.
+    latest_version: 1
+
+    config:
+      tags: ["product", "marts", "public"]
+      grants:
+        select: ['ANALYTICS_DEV_ROLE']
+      meta:
+        owner:     product-team@techminionacademy.com
+        domain:    product
+        sla:       daily
+        consumers: ["dbt_analytics"]
+
+    versions:
+      - v: 1
+        defined_in: fct_usage_v1
+
+    columns:
+      - name: feature_id
+        description: "Feature identifier (proxy: lineitem line number)."
+        data_type: number(38,0)
+        constraints: [{type: not_null}]
+        data_tests: [not_null]
+      - name: feature_category
+        description: "Feature category (proxy: ship mode)."
+        data_type: varchar
+        constraints: [{type: not_null}]
+      - name: usage_month
+        description: Month of usage. Primary time dimension.
+        data_type: date
+        constraints: [{type: not_null}]
+        data_tests: [not_null]
+      - name: total_events
+        description: Total usage events for this feature-month.
+        data_type: number(38,0)
+        constraints: [{type: not_null}]
+      - name: unique_users
+        description: Distinct users (orders) using this feature this month.
+        data_type: number(38,0)
+        constraints: [{type: not_null}]
+      - name: total_usage_value
+        description: Total monetary value of usage events.
+        data_type: number(18,2)
+      - name: churn_rate
+        description: Ratio of churned events to total events.
+        data_type: number(18,2)
+      - name: total_quantity
+        description: Total quantity across all usage events.
+        data_type: number(38,0)
+      - name: churned_events
+        description: Count of usage events that resulted in churn.
+        data_type: number(38,0)

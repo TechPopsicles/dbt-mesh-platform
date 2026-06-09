@@ -1,0 +1,20 @@
+version: 2
+
+sources:
+  - name: commercial
+    description: "Commercial domain public contracts consumed by Finance."
+    database: "{{ env_var('COMMERCIAL_DATABASE', 'COMMERCIAL_DEV') }}"
+    schema:   "{{ env_var('COMMERCIAL_SCHEMA',   'KIRAN_MARTS') }}"
+    tables:
+      - name: fct_orders_v1
+        description: "Order-level revenue from Commercial. Primary input for ARR proxy."
+      - name: dim_customers_v1
+        description: "Customer dimension from Commercial. Used for customer segmentation."
+
+  - name: platform
+    description: "Platform staging views."
+    database: "{{ env_var('PLATFORM_DATABASE', 'PLATFORM_DEV') }}"
+    schema:   "{{ env_var('PLATFORM_SCHEMA',   'KIRAN_STAGING') }}"
+    tables:
+      - name: stg_tpch__lineitem
+        description: "Line item detail for cost and margin analysis."

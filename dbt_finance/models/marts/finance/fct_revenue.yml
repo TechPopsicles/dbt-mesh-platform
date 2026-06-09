@@ -1,0 +1,70 @@
+version: 2
+
+models:
+  - name: fct_revenue
+    description: >
+      Monthly revenue aggregation per customer. Finance's primary published
+      contract. Consumed by dbt_analytics for cross-domain revenue metrics.
+      Grain: customer_key + order_month.
+    latest_version: 1
+
+    config:
+      tags: ["finance", "marts", "public"]
+      grants:
+        select: ['ANALYTICS_DEV_ROLE']
+      meta:
+        owner:     finance-team@techminionacademy.com
+        domain:    finance
+        sla:       daily
+        consumers: ["dbt_analytics"]
+
+    versions:
+      - v: 1
+        defined_in: fct_revenue_v1
+
+    columns:
+      - name: customer_key
+        description: Foreign key to dim_customers.
+        data_type: number(38,0)
+        constraints:
+          - type: not_null
+        data_tests: [not_null]
+      - name: order_month
+        description: Month of revenue. Primary time dimension.
+        data_type: date
+        constraints:
+          - type: not_null
+        data_tests: [not_null]
+      - name: gross_revenue
+        description: Total revenue including tax for this customer-month.
+        data_type: number(18,2)
+        constraints:
+          - type: not_null
+      - name: net_revenue
+        description: Revenue after discounts, before tax.
+        data_type: number(18,2)
+        constraints:
+          - type: not_null
+      - name: order_count
+        description: Number of orders placed in this month.
+        data_type: number(38,0)
+        constraints:
+          - type: not_null
+      - name: avg_order_value
+        description: Average order value for this customer-month.
+        data_type: number(18,2)
+      - name: order_quarter
+        description: Quarter of the order month.
+        data_type: date
+      - name: order_year
+        description: Year of the order month.
+        data_type: number(38,0)
+      - name: total_discount_amount
+        description: Total discount given this month.
+        data_type: number(18,2)
+      - name: avg_discount_rate
+        description: Average discount rate across orders this month.
+        data_type: number(18,2)
+      - name: total_line_items
+        description: Total line items across all orders this month.
+        data_type: number(38,0)

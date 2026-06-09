@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: stg_finance__orders
+    description: >
+      Finance view of commercial orders. Adds discount metrics and
+      date truncations used in ARR and revenue reporting.
+    config:
+      tags: ["finance", "staging"]
+      meta:
+        owner: finance-team@techminionacademy.com
+        grain: order_key
+    columns:
+      - name: order_key
+        description: Primary key for the order.
+        data_type: number(38,0)
+        data_tests: [not_null, unique]
+      - name: gross_revenue
+        description: Total order value including tax.
+        data_type: number(18,2)
+        data_tests: [not_null]
+      - name: net_revenue
+        description: Order value after discounts, before tax.
+        data_type: number(18,2)
+        data_tests: [not_null]
+      - name: total_discount_amount
+        description: Absolute discount value (gross - net).
+        data_type: number(18,2)
+      - name: order_month
+        description: Order date truncated to month. Used for MRR calculation.
+        data_type: date
+      - name: order_quarter
+        description: Order date truncated to quarter.
+        data_type: date

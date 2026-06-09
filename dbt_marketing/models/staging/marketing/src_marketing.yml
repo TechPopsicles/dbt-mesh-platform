@@ -1,0 +1,20 @@
+version: 2
+
+sources:
+  - name: commercial
+    description: "Commercial public contracts consumed by Marketing."
+    database: "{{ env_var('COMMERCIAL_DATABASE', 'COMMERCIAL_DEV') }}"
+    schema:   "{{ env_var('COMMERCIAL_SCHEMA',   'KIRAN_MARTS') }}"
+    tables:
+      - name: dim_customers_v1
+        description: "Customer dimension. Primary targeting input for campaigns."
+
+  - name: platform
+    description: "Platform staging views."
+    database: "{{ env_var('PLATFORM_DATABASE', 'PLATFORM_DEV') }}"
+    schema:   "{{ env_var('PLATFORM_SCHEMA',   'KIRAN_STAGING') }}"
+    tables:
+      - name: stg_tpch__nation
+        description: "Nation reference — used for geographic campaign targeting."
+      - name: stg_tpch__orders
+        description: "Orders for recency scoring in RFM segmentation."

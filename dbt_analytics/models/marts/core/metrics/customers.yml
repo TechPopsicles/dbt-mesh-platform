@@ -1,0 +1,23 @@
+version: 2
+
+metrics:
+
+  - name: active_customers
+    label: Active Customers
+    description: >
+      Count of distinct customers who have placed at least one order.
+      Owner: Analytics team.
+    type: simple
+    type_params:
+      measure: customer_count
+
+  - name: revenue_per_customer
+    label: Revenue Per Customer
+    description: >
+      Average gross revenue per active customer. Key LTV proxy.
+      Slice by customer_tier for cohort analysis.
+      Owner: Analytics team.
+    type: ratio
+    type_params:
+      numerator: gross_revenue
+      denominator: active_customers

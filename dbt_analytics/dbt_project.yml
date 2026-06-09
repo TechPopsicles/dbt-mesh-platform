@@ -1,0 +1,25 @@
+name: dbt_analytics
+version: "1.0.0"
+config-version: 2
+require-dbt-version: [">=1.11.0", "<2.0.0"]
+
+profile: analytics
+
+model-paths:    ["models"]
+macro-paths:    ["macros"]
+target-path:    "target"
+clean-targets:  ["target", "dbt_packages"]
+
+models:
+  dbt_analytics:
+    marts:
+      +materialized: table
+      +access: public
+      +schema: marts
+      +tags: ["analytics", "marts"]
+
+tests:
+  dbt_analytics:
+    +severity: warn           # analytics is consumer — warn not error
+    +store_failures: true
+    +schema: test_failures

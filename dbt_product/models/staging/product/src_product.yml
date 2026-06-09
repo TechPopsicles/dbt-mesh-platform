@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: platform
+    description: "Platform staging views consumed by Product."
+    database: "{{ env_var('PLATFORM_DATABASE', 'PLATFORM_DEV') }}"
+    schema:   "{{ env_var('PLATFORM_SCHEMA',   'KIRAN_STAGING') }}"
+    tables:
+      - name: stg_tpch__lineitem
+        description: "Line items used as proxy for product feature usage events."
+      - name: stg_tpch__part
+        description: "Parts catalogue — proxy for product/feature catalogue."
+      - name: stg_tpch__partsupp
+        description: "Part-supplier relationships — proxy for feature availability."

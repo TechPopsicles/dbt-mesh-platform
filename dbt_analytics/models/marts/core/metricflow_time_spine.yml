@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: metricflow_time_spine
+    description: >
+      Daily time spine required by MetricFlow for time-series metric calculations.
+      Covers 5 years back to 30 days forward from current date.
+      Do not rename the date_day column — MetricFlow requires this exact name.
+    time_spine:
+      standard_granularity_column: date_day
+    config:
+      materialized: table
+      tags: ["analytics", "metricflow", "time-spine"]
+    columns:
+      - name: date_day
+        description: One row per calendar day. Primary time dimension for MetricFlow.
+        granularity: day
+        data_tests:
+          - not_null
+          - unique

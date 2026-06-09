@@ -1,0 +1,3 @@
+projects:
+  - name: dbt_platform
+  - name: dbt_commercial

@@ -1,0 +1,44 @@
+version: 2
+
+# =============================================================================
+# dbt_analytics — Source definitions
+# =============================================================================
+# Analytics reads public contracts from all five upstream domains.
+# This is the cross-domain consumer — it never owns raw data.
+# All inputs are versioned public contracts.
+# =============================================================================
+
+sources:
+  - name: commercial
+    description: "Commercial domain public contracts."
+    database: "{{ env_var('COMMERCIAL_DATABASE', 'COMMERCIAL_DEV') }}"
+    schema:   "{{ env_var('COMMERCIAL_SCHEMA',   'KIRAN_MARTS') }}"
+    tables:
+      - name: fct_orders_v1
+        description: "Order-level revenue. Primary commercial fact."
+      - name: dim_customers_v1
+        description: "Customer dimension without PII."
+
+  - name: finance
+    description: "Finance domain public contracts."
+    database: "{{ env_var('FINANCE_DATABASE', 'FINANCE_DEV') }}"
+    schema:   "{{ env_var('FINANCE_SCHEMA',   'KIRAN_MARTS') }}"
+    tables:
+      - name: fct_revenue_v1
+        description: "Monthly revenue by customer from Finance."
+
+  - name: product
+    description: "Product domain public contracts."
+    database: "{{ env_var('PRODUCT_DATABASE', 'PRODUCT_DEV') }}"
+    schema:   "{{ env_var('PRODUCT_SCHEMA',   'KIRAN_MARTS') }}"
+    tables:
+      - name: fct_usage_v1
+        description: "Monthly feature usage from Product."
+
+  - name: marketing
+    description: "Marketing domain public contracts."
+    database: "{{ env_var('MARKETING_DATABASE', 'MARKETING_DEV') }}"
+    schema:   "{{ env_var('MARKETING_SCHEMA',   'KIRAN_MARTS') }}"
+    tables:
+      - name: fct_attribution_v1
+        description: "Customer segment attribution from Marketing."

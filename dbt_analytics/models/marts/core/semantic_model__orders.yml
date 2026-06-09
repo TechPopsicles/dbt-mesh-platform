@@ -1,0 +1,125 @@
+version: 2
+
+# =============================================================================
+# Semantic Model — orders
+# =============================================================================
+# The MetricFlow semantic model bridges dbt models and metric definitions.
+# It declares:
+#   - The underlying dbt model
+#   - Dimensions (how to slice the data)
+#   - Measures (what to aggregate)
+#
+# Metrics are defined separately in /metrics/ and reference this semantic model.
+# =============================================================================
+
+semantic_models:
+  - name: orders
+    description: >
+      Semantic model for order-level analytics. Built on fct_orders_enriched —
+      the cross-domain mart that joins Commercial orders with customer attributes.
+      This is THE authoritative semantic definition of revenue for all teams.
+    model: ref('fct_orders_enriched')
+
+    # ── Dimensions ────────────────────────────────────────────────────────────
+    # How metrics can be sliced and filtered
+    dimensions:
+      - name: order_date
+        type: time
+        description: Date the order was placed. Primary time dimension.
+        type_params:
+          time_granularity: day
+
+      - name: order_month
+        type: time
+        description: Order month for monthly aggregations.
+        type_params:
+          time_granularity: month
+
+      - name: order_status
+        type: categorical
+        description: "Order status: F = Fulfilled, O = Open, P = Partial."
+
+      - name: order_status_label
+        type: categorical
+        description: Human-readable order status label.
+
+      - name: market_segment
+        type: categorical
+        description: Customer market segment (AUTOMOBILE, BUILDING, etc.)
+
+      - name: customer_tier
+        type: categorical
+        description: Customer value tier (platinum, gold, silver, bronze).
+
+      - name: order_priority
+        type: categorical
+        description: Order priority code.
+
+      - name: is_high_priority
+        type: categorical
+        description: Whether this is a high-priority order.
+
+      - name: is_high_value
+        type: categorical
+        description: Whether the customer has high account balance.
+
+    # ── Entities ──────────────────────────────────────────────────────────────
+    # Join keys — used when metrics span multiple semantic models
+    entities:
+      - name: order
+        type: primary
+        expr: order_key
+
+      - name: customer
+        type: foreign
+        expr: customer_key
+
+    # ── Measures ──────────────────────────────────────────────────────────────
+    # Aggregatable facts — referenced by metric definitions
+    measures:
+      - name: gross_revenue_amount
+        description: >
+          Sum of gross revenue across orders. THE authoritative revenue measure.
+          Includes tax. Used in all executive and financial reporting.
+          Source: Commercial fct_orders_v1 via fct_orders_enriched.
+        agg: sum
+        expr: gross_revenue
+        agg_time_dimension: order_date
+
+      - name: net_revenue_amount
+        description: >
+          Sum of net revenue (after discount, before tax).
+          Used for margin analysis and discount impact reporting.
+        agg: sum
+        expr: net_revenue
+        agg_time_dimension: order_date
+
+      - name: discount_amount
+        description: Total discount given (gross - net).
+        agg: sum
+        expr: gross_revenue - net_revenue
+        agg_time_dimension: order_date
+
+      - name: order_count
+        description: Count of orders. Used for volume metrics.
+        agg: count_distinct
+        expr: order_key
+        agg_time_dimension: order_date
+
+      - name: avg_order_value
+        description: Average gross revenue per order.
+        agg: average
+        expr: gross_revenue
+        agg_time_dimension: order_date
+
+      - name: line_item_count
+        description: Total line items across orders.
+        agg: sum
+        expr: line_item_count
+        agg_time_dimension: order_date
+
+      - name: customer_count
+        description: Count of distinct customers. Used for active_customers and revenue_per_customer metrics.
+        agg: count_distinct
+        expr: customer_key
+        agg_time_dimension: order_date

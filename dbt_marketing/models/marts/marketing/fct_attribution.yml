@@ -1,0 +1,74 @@
+version: 2
+
+models:
+  - name: fct_attribution
+    description: >
+      Customer segment attribution metrics. TPC-H customer data as proxy
+      for campaign attribution. One row per segment combination.
+      Consumed by dbt_analytics for cross-domain customer metrics.
+    latest_version: 1
+
+    config:
+      tags: ["marketing", "marts", "public"]
+      grants:
+        select: ['ANALYTICS_DEV_ROLE']
+      meta:
+        owner:     marketing-team@techminionacademy.com
+        domain:    marketing
+        sla:       daily
+        consumers: ["dbt_analytics"]
+
+    versions:
+      - v: 1
+        defined_in: fct_attribution_v1
+
+    columns:
+      - name: market_segment
+        description: Customer market segment.
+        data_type: varchar
+        constraints: [{type: not_null}]
+        data_tests: [not_null]
+      - name: customer_tier
+        description: Customer value tier (platinum/gold/silver/bronze).
+        data_type: varchar
+        constraints: [{type: not_null}]
+        data_tests: [not_null]
+      - name: nation_key
+        description: Nation foreign key for geographic breakdown.
+        data_type: number(38,0)
+        constraints: [{type: not_null}]
+        data_tests: [not_null]
+      - name: customer_count
+        description: Number of customers in this segment combination.
+        data_type: number(38,0)
+        constraints: [{type: not_null}]
+      - name: segment_revenue
+        description: Total lifetime gross revenue for this segment.
+        data_type: number(18,2)
+      - name: avg_customer_revenue
+        description: Average lifetime revenue per customer in this segment.
+        data_type: number(18,2)
+      - name: high_value_count
+        description: Count of high-value customers in this segment.
+        data_type: number(38,0)
+      - name: never_ordered_count
+        description: Count of customers who have never placed an order.
+        data_type: number(38,0)
+      - name: frequency_segment
+        description: "Order frequency tier: high/medium/low."
+        data_type: varchar
+      - name: monetary_segment
+        description: "Revenue tier: high/medium/low."
+        data_type: varchar
+      - name: delinquent_count
+        description: Count of customers with negative account balance.
+        data_type: number(38,0)
+      - name: avg_tenure_days
+        description: Average customer tenure in days.
+        data_type: number(18,2)
+      - name: segment_order_count
+        description: Total orders across all customers in this segment.
+        data_type: number(38,0)
+      - name: avg_orders_per_customer
+        description: Average number of orders per customer in this segment.
+        data_type: number(18,2)
