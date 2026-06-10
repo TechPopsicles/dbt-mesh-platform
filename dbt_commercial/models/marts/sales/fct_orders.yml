@@ -24,6 +24,8 @@ models:
 
     config:
       tags: ["commercial", "marts", "sales", "public"]
+      contract:
+        enforced: true
       grants:
         select: ['FINANCE_DEV_ROLE', 'ANALYTICS_DEV_ROLE']
       meta:
@@ -36,19 +38,6 @@ models:
     versions:
       - v: 1
         defined_in: fct_orders_v1
-        deprecation_date: "2026-07-08"
-      - v: 2
-        defined_in: fct_orders_v2
-        columns:
-          - include: all
-            exclude: [gross_revenue]
-          - name: total_revenue
-            description: >
-              Total order value including tax. Renamed from gross_revenue in v2
-              to align with the company-wide metric glossary.
-            data_type: number(18,2)
-            constraints:
-              - type: not_null
 
     columns:
       - name: order_key

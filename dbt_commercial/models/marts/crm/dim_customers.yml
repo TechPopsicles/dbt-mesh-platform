@@ -19,6 +19,8 @@ models:
 
     config:
       tags: ["commercial", "marts", "crm", "public"]
+      contract:
+        enforced: true
       grants:
         select: ['MARKETING_DEV_ROLE', 'ANALYTICS_DEV_ROLE']
       meta:

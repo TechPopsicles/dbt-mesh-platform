@@ -1,0 +1,67 @@
+name: "dbt_platform · Deploy"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "dbt_platform/**"
+
+env:
+  DBT_PROJECT_DIR:              dbt_platform
+  SNOWFLAKE_ACCOUNT:             ${{ secrets.SNOWFLAKE_ACCOUNT }}
+  SNOWFLAKE_USER:                ${{ secrets.SNOWFLAKE_USER }}
+  SNOWFLAKE_PRIVATE_KEY_PATH:    /home/runner/.dbt/rsa_key.p8
+  SNOWFLAKE_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSPHRASE }}
+
+jobs:
+  deploy:
+    name: "Deploy — dbt_platform"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dbt
+        run: pip install dbt-core==1.11.8 dbt-snowflake==1.11.4
+
+      - name: Set up RSA key
+        run: |
+          mkdir -p ~/.dbt
+          echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}" > ~/.dbt/rsa_key.p8
+          chmod 600 ~/.dbt/rsa_key.p8
+
+      - name: dbt deps
+        working-directory: ${{ env.DBT_PROJECT_DIR }}
+        run: dbt deps
+
+      # ── Full production build ─────────────────────────────────────────────
+      - name: dbt build (prod)
+        working-directory: ${{ env.DBT_PROJECT_DIR }}
+        env:
+          SNOWFLAKE_ROLE:      PLATFORM_PROD_ROLE
+          SNOWFLAKE_WAREHOUSE: PLATFORM_WH
+          SNOWFLAKE_DATABASE:  PLATFORM_PROD
+          DBT_USER_SCHEMA:     ""
+        run: dbt build --target prod --profiles-dir .
+
+      # ── Upload artifacts for state comparison + monitoring ────────────────
+      - name: Upload manifest (prod state)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-prod-manifest
+          path: ${{ env.DBT_PROJECT_DIR }}/target/manifest.json
+          retention-days: 30
+
+      - name: Upload run_results (monitoring)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-run-results
+          path: ${{ env.DBT_PROJECT_DIR }}/target/run_results.json
+          retention-days: 30

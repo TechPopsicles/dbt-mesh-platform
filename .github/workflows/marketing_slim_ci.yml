@@ -1,0 +1,134 @@
+name: "dbt_marketing · Slim CI"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "dbt_marketing/**"
+
+env:
+  DBT_PROJECT_DIR:              dbt_marketing
+  DBT_SCHEMA:                   "pr_${{ github.event.pull_request.number }}"
+  SNOWFLAKE_ACCOUNT:             ${{ secrets.SNOWFLAKE_ACCOUNT }}
+  SNOWFLAKE_USER:                ${{ secrets.SNOWFLAKE_USER }}
+  SNOWFLAKE_PRIVATE_KEY_PATH:    /home/runner/.dbt/rsa_key.p8
+  SNOWFLAKE_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSPHRASE }}
+
+jobs:
+  slim-ci:
+    name: "Slim CI — dbt_marketing"
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Full history so we can checkout main for state manifest ────────
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── 2. Python + dbt ───────────────────────────────────────────────────
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dbt
+        run: pip install dbt-core==1.11.8 dbt-snowflake==1.11.4
+
+      # ── 3. RSA key ────────────────────────────────────────────────────────
+      - name: Set up RSA key
+        run: |
+          mkdir -p ~/.dbt
+          echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}" > ~/.dbt/rsa_key.p8
+          chmod 600 ~/.dbt/rsa_key.p8
+
+      # ── 4. Install packages ───────────────────────────────────────────────
+      - name: dbt deps
+        working-directory: ${{ env.DBT_PROJECT_DIR }}
+        run: dbt deps
+
+      # ── 5. Generate state manifest from main ─────────────────────────────
+      # Checkout main, parse prod state → save manifest → return to PR branch.
+      # This baseline drives state:modified+ comparison in steps 7 & 8.
+      - name: Generate prod state manifest
+        working-directory: ${{ env.DBT_PROJECT_DIR }}
+        env:
+          SNOWFLAKE_ROLE:      MARKETING_PROD_ROLE
+          SNOWFLAKE_WAREHOUSE: MARKETING_WH
+          SNOWFLAKE_DATABASE:  MARKETING_PROD
+          DBT_USER_SCHEMA:     ""
+        run: |
+          git checkout main
+          dbt deps
+          dbt parse --target prod --profiles-dir .
+          mkdir -p state
+          cp target/manifest.json state/manifest.json
+          git checkout -
+          dbt deps
+
+      # ── 6. Compile — catches broken cross-project refs early ──────────────
+      - name: Compile + validate
+        working-directory: ${{ env.DBT_PROJECT_DIR }}
+        env:
+          SNOWFLAKE_ROLE:      MARKETING_DEV_ROLE
+          SNOWFLAKE_WAREHOUSE: MARKETING_WH
+          SNOWFLAKE_DATABASE:  MARKETING_DEV
+        run: |
+          dbt ls \
+            --target ci \
+            --select "state:modified+" \
+            --state  state \
+            --output name \
+            --profiles-dir .
+
+      # ── 7. Clone incremental models into PR schema ────────────────────────
+      # Snowflake zero-copy clone so is_incremental() evaluates correctly.
+      - name: Clone incrementals into PR schema
+        working-directory: ${{ env.DBT_PROJECT_DIR }}
+        env:
+          SNOWFLAKE_ROLE:      MARKETING_DEV_ROLE
+          SNOWFLAKE_WAREHOUSE: MARKETING_WH
+          SNOWFLAKE_DATABASE:  MARKETING_DEV
+        run: |
+          dbt clone \
+            --target ci \
+            --state  state \
+            --defer \
+            --select "state:modified+,config.materialized:incremental,state:old" \
+            --profiles-dir .
+
+      # ── 8. Slim build ─────────────────────────────────────────────────────
+      # Only builds modified models + downstream. Defers the rest to prod.
+      - name: dbt build (slim)
+        working-directory: ${{ env.DBT_PROJECT_DIR }}
+        env:
+          SNOWFLAKE_ROLE:      MARKETING_DEV_ROLE
+          SNOWFLAKE_WAREHOUSE: MARKETING_WH
+          SNOWFLAKE_DATABASE:  MARKETING_DEV
+        run: |
+          dbt build \
+            --target ci \
+            --state  state \
+            --defer \
+            --select "state:modified+" \
+            --profiles-dir .
+
+      # ── 9. PR comment ─────────────────────────────────────────────────────
+      - name: Post CI summary
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok     = '${{ job.status }}' === 'success';
+            const icon   = ok ? '✅' : '❌';
+            const pr     = context.issue.number;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner:        context.repo.owner,
+              repo:         context.repo.repo,
+              body: [
+                `### ${icon} dbt_marketing Slim CI`,
+                `**Selection:** \`state:modified+\` (slim model — only what changed)`,
+                `**CI schema:** \`MARKETING_DEV.pr_${pr}_staging / pr_${pr}_marts\``,
+                `**Status:** ${{ job.status }}`,
+              ].join('\n')
+            });

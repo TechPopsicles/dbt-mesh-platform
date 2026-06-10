@@ -1,0 +1,479 @@
+{
+  "generated_at": "2026-06-10T15:37:53.981167",
+  "summary": {
+    "total_models": 24,
+    "avg_score": 80.4,
+    "grade_counts": {
+      "A": 18,
+      "B": 1,
+      "C": 5,
+      "D": 0
+    }
+  },
+  "models": [
+    {
+      "model": "stg_tpch__nation",
+      "project": "dbt_platform",
+      "path": "models/staging/tpch/stg_tpch__nation.sql",
+      "access": "public",
+      "materialized": "view",
+      "total_score": 100,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 20,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 20
+      },
+      "issues": []
+    },
+    {
+      "model": "stg_tpch__region",
+      "project": "dbt_platform",
+      "path": "models/staging/tpch/stg_tpch__region.sql",
+      "access": "public",
+      "materialized": "view",
+      "total_score": 100,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 20,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 20
+      },
+      "issues": []
+    },
+    {
+      "model": "stg_tpch__partsupp",
+      "project": "dbt_platform",
+      "path": "models/staging/tpch/stg_tpch__partsupp.sql",
+      "access": "public",
+      "materialized": "view",
+      "total_score": 98,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 20,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 18
+      },
+      "issues": [
+        "high blast radius: 6 downstream models (threshold: 5)"
+      ]
+    },
+    {
+      "model": "stg_finance__orders",
+      "project": "dbt_finance",
+      "path": "models/staging/finance/stg_finance__orders.sql",
+      "access": "protected",
+      "materialized": "view",
+      "total_score": 93,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 13,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 20
+      },
+      "issues": []
+    },
+    {
+      "model": "stg_tpch__supplier",
+      "project": "dbt_platform",
+      "path": "models/staging/tpch/stg_tpch__supplier.sql",
+      "access": "public",
+      "materialized": "view",
+      "total_score": 92,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 20,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 12
+      },
+      "issues": [
+        "high blast radius: 9 downstream models (threshold: 5)"
+      ]
+    },
+    {
+      "model": "stg_tpch__customer",
+      "project": "dbt_platform",
+      "path": "models/staging/tpch/stg_tpch__customer.sql",
+      "access": "public",
+      "materialized": "view",
+      "total_score": 90,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 20,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 10
+      },
+      "issues": [
+        "high blast radius: 10 downstream models (threshold: 5)"
+      ]
+    },
+    {
+      "model": "stg_commercial__customers",
+      "project": "dbt_commercial",
+      "path": "models/staging/commercial/stg_commercial__customers.sql",
+      "access": "protected",
+      "materialized": "view",
+      "total_score": 90,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 18,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 12
+      },
+      "issues": [
+        "high blast radius: 9 downstream models (threshold: 5)"
+      ]
+    },
+    {
+      "model": "stg_tpch__orders",
+      "project": "dbt_platform",
+      "path": "models/staging/tpch/stg_tpch__orders.sql",
+      "access": "public",
+      "materialized": "view",
+      "total_score": 88,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 20,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 8
+      },
+      "issues": [
+        "high blast radius: 11 downstream models (threshold: 5)"
+      ]
+    },
+    {
+      "model": "stg_tpch__part",
+      "project": "dbt_platform",
+      "path": "models/staging/tpch/stg_tpch__part.sql",
+      "access": "public",
+      "materialized": "view",
+      "total_score": 86,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 20,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 6
+      },
+      "issues": [
+        "high blast radius: 12 downstream models (threshold: 5)"
+      ]
+    },
+    {
+      "model": "stg_commercial__orders",
+      "project": "dbt_commercial",
+      "path": "models/staging/commercial/stg_commercial__orders.sql",
+      "access": "protected",
+      "materialized": "view",
+      "total_score": 84,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 20,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 4
+      },
+      "issues": [
+        "high blast radius: 13 downstream models (threshold: 5)"
+      ]
+    },
+    {
+      "model": "stg_commercial__lineitems",
+      "project": "dbt_commercial",
+      "path": "models/staging/commercial/stg_commercial__lineitems.sql",
+      "access": "protected",
+      "materialized": "view",
+      "total_score": 84,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 20,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 4
+      },
+      "issues": [
+        "high blast radius: 13 downstream models (threshold: 5)"
+      ]
+    },
+    {
+      "model": "fct_revenue",
+      "project": "dbt_finance",
+      "path": "models/marts/finance/fct_revenue_v1.sql",
+      "access": "public",
+      "materialized": "table",
+      "total_score": 84,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 4,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 20
+      },
+      "issues": [
+        "low test coverage: 2 tests for 11 columns"
+      ]
+    },
+    {
+      "model": "fct_usage",
+      "project": "dbt_product",
+      "path": "models/marts/product/fct_usage_v1.sql",
+      "access": "public",
+      "materialized": "table",
+      "total_score": 84,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 4,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 20
+      },
+      "issues": [
+        "low test coverage: 2 tests for 9 columns"
+      ]
+    },
+    {
+      "model": "fct_attribution",
+      "project": "dbt_marketing",
+      "path": "models/marts/marketing/fct_attribution_v1.sql",
+      "access": "public",
+      "materialized": "table",
+      "total_score": 84,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 4,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 20
+      },
+      "issues": [
+        "low test coverage: 3 tests for 14 columns"
+      ]
+    },
+    {
+      "model": "fct_orders",
+      "project": "dbt_commercial",
+      "path": "models/marts/sales/fct_orders_v1.sql",
+      "access": "public",
+      "materialized": "table",
+      "total_score": 82,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 8,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 14
+      },
+      "issues": [
+        "low test coverage: 7 tests for 17 columns",
+        "high blast radius: 8 downstream models (threshold: 5)"
+      ]
+    },
+    {
+      "model": "dim_customers",
+      "project": "dbt_commercial",
+      "path": "models/marts/crm/dim_customers_v1.sql",
+      "access": "public",
+      "materialized": "table",
+      "total_score": 82,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 12,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 10
+      },
+      "issues": [
+        "high blast radius: 10 downstream models (threshold: 5)"
+      ]
+    },
+    {
+      "model": "stg_tpch__lineitem",
+      "project": "dbt_platform",
+      "path": "models/staging/tpch/stg_tpch__lineitem.sql",
+      "access": "public",
+      "materialized": "view",
+      "total_score": 80,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 20,
+        "contracts": 20,
+        "freshness": 20,
+        "blast_radius": 0
+      },
+      "issues": [
+        "high blast radius: 23 downstream models (threshold: 5)"
+      ]
+    },
+    {
+      "model": "metricflow_time_spine",
+      "project": "dbt_analytics",
+      "path": "models/marts/core/metricflow_time_spine.sql",
+      "access": "public",
+      "materialized": "table",
+      "total_score": 80,
+      "grade": "A",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 20,
+        "contracts": 0,
+        "freshness": 20,
+        "blast_radius": 20
+      },
+      "issues": [
+        "public mart missing contract: enforced: true",
+        "1 column(s) missing data_type"
+      ]
+    },
+    {
+      "model": "fct_orders_enriched",
+      "project": "dbt_analytics",
+      "path": "models/marts/core/fct_orders_enriched.sql",
+      "access": "public",
+      "materialized": "table",
+      "total_score": 74,
+      "grade": "B",
+      "dimensions": {
+        "documentation": 20,
+        "test_coverage": 6,
+        "contracts": 10,
+        "freshness": 20,
+        "blast_radius": 18
+      },
+      "issues": [
+        "low test coverage: 6 tests for 19 columns",
+        "public mart missing contract: enforced: true",
+        "high blast radius: 6 downstream models (threshold: 5)"
+      ]
+    },
+    {
+      "model": "fct_orders_v2",
+      "project": "dbt_commercial",
+      "path": "models/marts/sales/fct_orders_v2.sql",
+      "access": "public",
+      "materialized": "table",
+      "total_score": 55,
+      "grade": "C",
+      "dimensions": {
+        "documentation": 0,
+        "test_coverage": 0,
+        "contracts": 15,
+        "freshness": 20,
+        "blast_radius": 20
+      },
+      "issues": [
+        "missing or thin model description",
+        "no columns defined in YAML",
+        "no data tests found"
+      ]
+    },
+    {
+      "model": "int_customer_orders",
+      "project": "dbt_commercial",
+      "path": "models/intermediate/commercial/int_customer_orders.sql",
+      "access": "protected",
+      "materialized": "view",
+      "total_score": 55,
+      "grade": "C",
+      "dimensions": {
+        "documentation": 0,
+        "test_coverage": 0,
+        "contracts": 15,
+        "freshness": 20,
+        "blast_radius": 20
+      },
+      "issues": [
+        "missing or thin model description",
+        "no columns defined in YAML",
+        "no data tests found"
+      ]
+    },
+    {
+      "model": "int_order_items",
+      "project": "dbt_commercial",
+      "path": "models/intermediate/commercial/int_order_items.sql",
+      "access": "protected",
+      "materialized": "view",
+      "total_score": 55,
+      "grade": "C",
+      "dimensions": {
+        "documentation": 0,
+        "test_coverage": 0,
+        "contracts": 15,
+        "freshness": 20,
+        "blast_radius": 20
+      },
+      "issues": [
+        "missing or thin model description",
+        "no columns defined in YAML",
+        "no data tests found"
+      ]
+    },
+    {
+      "model": "stg_product__usage",
+      "project": "dbt_product",
+      "path": "models/staging/product/stg_product__usage.sql",
+      "access": "protected",
+      "materialized": "view",
+      "total_score": 55,
+      "grade": "C",
+      "dimensions": {
+        "documentation": 0,
+        "test_coverage": 0,
+        "contracts": 15,
+        "freshness": 20,
+        "blast_radius": 20
+      },
+      "issues": [
+        "missing or thin model description",
+        "no columns defined in YAML",
+        "no data tests found"
+      ]
+    },
+    {
+      "model": "stg_marketing__customers",
+      "project": "dbt_marketing",
+      "path": "models/staging/marketing/stg_marketing__customers.sql",
+      "access": "protected",
+      "materialized": "view",
+      "total_score": 55,
+      "grade": "C",
+      "dimensions": {
+        "documentation": 0,
+        "test_coverage": 0,
+        "contracts": 15,
+        "freshness": 20,
+        "blast_radius": 20
+      },
+      "issues": [
+        "missing or thin model description",
+        "no columns defined in YAML",
+        "no data tests found"
+      ]
+    }
+  ]
+}
