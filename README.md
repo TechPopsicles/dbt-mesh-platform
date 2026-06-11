@@ -16,7 +16,7 @@ built to accompany the Medium blog series:
 | 2 | [Four AI Agents That Keep Your dbt Project Honest](https://kiran-pothina.medium.com/four-ai-agents-that-keep-your-dbt-project-honest-f6bccf5cd465) | ✅ Published |
 | 3 | [Scaling dbt Across Teams — Mesh, Contracts and Versioning](https://medium.com/@kiran-pothina/scaling-dbt-across-teams-mesh-contracts-and-versioning-9177bd22e038) | ✅ Published |
 | 4 | [One Truth, Five Teams — Governing the dbt Semantic Layer](https://medium.com/@kiran-pothina/one-truth-five-teams-governing-the-dbt-semantic-layer-6b24aaabe873) | ✅ Published |
-| 5 | Ship Fast, Break Nothing — CI/CD, Monitoring and Model Health | 🔜 Coming soon |
+| 5 | [Ship Fast, Break Nothing — CI/CD, Monitoring and Model Health](https://kiran-pothina.medium.com/ship-fast-break-nothing-dbt-ci-cd-monitoring-and-model-health-029d261a7a31) | ✅ Published |
 
 ---
 
